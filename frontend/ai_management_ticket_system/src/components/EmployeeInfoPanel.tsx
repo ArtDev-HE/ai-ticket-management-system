@@ -1,12 +1,14 @@
 "use client";
 
 import { useTicketsByEmployee } from "@/hooks/useTickets";
+import { useUser } from '@/context/UserContext';
 import TicketCard from "./TicketCard";
 import EmployeeStats from "./EmployeeStats";
 
 export default function EmployeeInfoPanel() {
-  // TODO: Replace with session/user context later
-  const employeeId = "EMP-005";
+  // TODO: Replace with session/user context later (use JWT). For now use UserContext
+  const { currentEmployeeId } = useUser();
+  const employeeId = currentEmployeeId || "EMP-005";
 
   const { data: tickets, isLoading, isError } = useTicketsByEmployee(employeeId);
 

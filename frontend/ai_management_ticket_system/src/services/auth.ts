@@ -23,3 +23,13 @@ export const logoutDev = () => {
 export const getDevToken = () => (typeof window !== 'undefined' ? localStorage.getItem('token') : null);
 
 export default { loginDev, logoutDev, getDevToken };
+
+// Dev helper: current employee id (used to wire EmployeeInfoPanel to a selected employee)
+export const setCurrentEmployeeId = (id: string | null) => {
+    if (typeof window !== 'undefined') {
+        if (id) localStorage.setItem('current_employee', id);
+        else localStorage.removeItem('current_employee');
+    }
+};
+
+export const getCurrentEmployeeId = () => (typeof window !== 'undefined' ? localStorage.getItem('current_employee') : null);

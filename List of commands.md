@@ -26,3 +26,7 @@ npm install express pg dotenv cors
 
 npm install --save-dev nodemon
 
+
+
+**TODO:** Clean unused files and improve maintainability.
+
