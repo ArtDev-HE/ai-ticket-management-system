@@ -18,12 +18,12 @@ interface ChatMessage {
   text: string;
 }
 
-export default function InteractionLog({ aiOutput, messages }: { aiOutput: string | AiResponse | null; messages: ChatMessage[] }) {
+export default function InteractionLog({ aiOutput, messages, onClear, onExport }: { aiOutput: string | AiResponse | null; messages: ChatMessage[]; onClear?: () => void; onExport?: () => void }) {
   return (
     <section className="flex-1 flex border-r border-gray-200 bg-white">
       {/* 🔹 Right Half - Chat History */}
       <div className="w-1/2 min-w-[50%] overflow-y-auto p-4 border-r border-gray-200">
-        <ChatHistory messages={messages} />
+        <ChatHistory messages={messages} onClear={onClear} onExport={onExport} />
       </div>
 
       {/* 🔹 Left Half - AI Output Panel */}

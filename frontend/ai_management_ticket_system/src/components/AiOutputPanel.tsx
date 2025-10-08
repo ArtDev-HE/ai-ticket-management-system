@@ -28,7 +28,19 @@ export default function AiOutputPanel({
           {descriptor ? (
             (() => {
               const key = descriptor!.key;
-              const data = descriptor!.data;
+              const rawData = descriptor!.data;
+              // sanitize data: prevent AI from injecting `title` or `label` fields that
+              // could accidentally override chart headings
+              let data: any = rawData;
+              if (Array.isArray(rawData)) {
+                data = rawData.map((item: any) => {
+                  const { title, label, ...rest } = item || {};
+                  return rest;
+                });
+              } else if (rawData && typeof rawData === 'object') {
+                const { title, label, ...rest } = rawData as any;
+                data = rest;
+              }
               console.log('[AiOutputPanel] descriptor', descriptor);
               const validation = validateVisualizationData(key, data);
               console.log('[AiOutputPanel] validation', validation);
