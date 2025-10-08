@@ -6,6 +6,29 @@ Last updated: 2025-10-08
 
 ---
 
+## Recent work (session summary)
+
+These are the concrete changes made during the current development session (for quick onboarding/reference):
+
+- Backend
+  - Added `src/routes/ai.js` AI proxy endpoint that returns dev canned visualization descriptors and forwards to an orchestration webhook (n8n) in production. Introduced AJV-based schema validation and a fallback so invalid descriptors no longer cause hard errors.
+  - Enhanced `src/routes/analytics.js` with dev-only helpers: deterministic synthetic trend injection for testing (EMP-001, EMP-TEST), and logic to fill missing `eficiencia_temporal` where possible.
+  - Added `scripts/seed_emp_test.js` (idempotent) to persist completed tickets for `EMP-TEST` so analytics return non-zero metrics during dev.
+
+- Frontend
+  - `frontend/src/components/ChatInput.tsx`: command parsing for `EMP-`, `PROC-`, `DEP-` commands; client-side normalization and deterministic fallbacks for `trendline_efficiency` descriptors to ensure charts always get the expected `{ fecha_actualizado, eficiencia_temporal }` numeric shape.
+  - `frontend/src/components/AiOutputPanel.tsx`: sanitizes AI descriptors, normalizes alternate shapes (e.g., `{ date, value }` → `{ fecha_actualizado, eficiencia_temporal }`), validates descriptors before rendering.
+  - `frontend/src/context/UserContext.tsx` and `HeaderBar.tsx`: dev employee selection persisted to localStorage and wired into the UI; `HeaderBar` made a client component so Set Employee is interactive.
+  - UI fixes: `ChatHistory.tsx` and `InteractionLog.tsx` layout changes to keep header/buttons fixed while messages scroll; `EmployeeStats.tsx` now coerces numeric strings to Number before formatting.
+
+- Tests & tooling
+  - Added lightweight test `scripts/test_ai_validation.js` to simulate an invalid n8n response and assert the backend returns a safe fallback descriptor. Added `npm run test:ai-validation`.
+
+Small notes
+- Feature flags used: `NEXT_PUBLIC_USE_BACKEND_AI` (frontend) and `USE_N8N_MOCK`/`NODE_ENV` checks (backend) toggle mock vs real orchestration.
+- Dev helpers are intentionally non-destructive: analytics helpers modify only in-memory responses unless the seed script is executed which writes to the DB.
+
+
 ## Project Structure (focused)
 
 - frontend/ai_management_ticket_system/

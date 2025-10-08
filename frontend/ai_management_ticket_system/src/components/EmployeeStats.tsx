@@ -39,6 +39,15 @@ export default function EmployeeStats({ employeeId }: EmployeeStatsProps) {
 
   const perf: EmployeePerformance = data.performance;
 
+  // coerce possible string numeric fields to numbers safely
+  const avgEff = perf.eficiencia_promedio !== undefined && perf.eficiencia_promedio !== null
+    ? Number(perf.eficiencia_promedio)
+    : null;
+
+  const hoursWorked = perf.horas_trabajadas !== undefined && perf.horas_trabajadas !== null
+    ? Number(perf.horas_trabajadas)
+    : null;
+
   return (
     <div className="p-4 border-t border-gray-200 bg-white">
       <h2 className="text-base font-semibold text-gray-800 mb-3">
@@ -52,12 +61,12 @@ export default function EmployeeStats({ employeeId }: EmployeeStatsProps) {
         <Stat label="Cancelled" value={perf.cancelados} />
         <Stat
           label="Avg Efficiency"
-          value={perf.eficiencia_promedio?.toFixed(1) ?? "—"}
+          value={avgEff !== null && !isNaN(avgEff) ? avgEff.toFixed(1) : "—"}
           unit="%"
         />
         <Stat
           label="Hours Worked"
-          value={perf.horas_trabajadas?.toFixed(1) ?? "—"}
+          value={hoursWorked !== null && !isNaN(hoursWorked) ? hoursWorked.toFixed(1) : "—"}
         />
       </div>
 

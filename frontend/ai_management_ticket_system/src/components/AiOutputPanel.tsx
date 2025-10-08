@@ -41,6 +41,21 @@ export default function AiOutputPanel({
                 const { title, label, ...rest } = rawData as any;
                 data = rest;
               }
+              // Normalization for trendline_efficiency: accept {date,value} shape
+              if (key === 'trendline_efficiency' && Array.isArray(data)) {
+                const looksLikeDateValue = data.length > 0 && data[0] && data[0].date && (data[0].value !== undefined);
+                if (looksLikeDateValue) {
+                  data = data.map((d: any) => ({
+                    fecha_actualizado: d.date,
+                    eficiencia_temporal: (typeof d.value === 'number') ? (d.value / 100) : (d.value ? Number(d.value) / 100 : null),
+                    // preserve other fields if present
+                    ...Object.keys(d).reduce((acc: any, k: string) => {
+                      if (k !== 'date' && k !== 'value') acc[k] = d[k];
+                      return acc;
+                    }, {}),
+                  }));
+                }
+              }
               console.log('[AiOutputPanel] descriptor', descriptor);
               const validation = validateVisualizationData(key, data);
               console.log('[AiOutputPanel] validation', validation);

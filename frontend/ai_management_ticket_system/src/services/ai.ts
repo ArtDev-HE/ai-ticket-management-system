@@ -100,3 +100,26 @@ export const generateVisualizationDescriptor = async (prompt: string): Promise<A
 };
 
 export default { generateAnswer };
+
+// Backend query helper — calls /api/ai/query on the server
+export const queryAiBackend = async (prompt: string) => {
+    const res = await fetch('/api/ai/query', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt })
+    });
+    if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`AI backend error: ${res.status} ${text}`);
+    }
+    return res.json();
+};
+
+// Wrapper to choose mock or backend based on env flag (Next.js will inline NEXT_PUBLIC_USE_BACKEND_AI)
+export const getAiDescriptor = async (prompt: string) => {
+    const useBackend = typeof process !== 'undefined' && (process.env.NEXT_PUBLIC_USE_BACKEND_AI === 'true');
+    if (useBackend) {
+        return queryAiBackend(prompt);
+    }
+    return generateVisualizationDescriptor(prompt);
+};

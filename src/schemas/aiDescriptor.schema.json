@@ -1,0 +1,40 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "AI Visualization Descriptor",
+    "type": "object",
+    "properties": {
+        "text": {
+            "type": "string"
+        },
+        "visualization": {
+            "type": [
+                "object",
+                "null"
+            ],
+            "properties": {
+                "key": {
+                    "type": "string"
+                },
+                "parameters": {
+                    "type": [
+                        "object",
+                        "null"
+                    ]
+                },
+                "data": {}
+            },
+            "required": [
+                "key"
+            ]
+        },
+        "analytics": {
+            "type": [
+                "object",
+                "null"
+            ]
+        }
+    },
+    "required": [
+        "text"
+    ]
+}

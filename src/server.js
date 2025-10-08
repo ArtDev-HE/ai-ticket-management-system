@@ -8,6 +8,7 @@ const procedimientosRoutes = require('./routes/procedimientos');
 const empleadosRoutes = require('./routes/empleados');
 const analyticsRoutes = require('./routes/analytics');
 const authRoutes = require('./routes/auth');
+const aiRoutes = require('./routes/ai');
 
 const app = express();
 
@@ -39,6 +40,7 @@ app.use('/api/procedimientos', procedimientosRoutes);
 app.use('/api/empleados', empleadosRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/ai', aiRoutes);
 
 // 404 handler
 app.use((req, res) => {

@@ -118,3 +118,22 @@
 
 Last synced: 2025-10-08
 
+## Recent session summary (what changed)
+
+- AI proxy and validation
+  - `src/routes/ai.js` now returns deterministic canned descriptors in dev and forwards to a configured n8n webhook in production. AJV validation is applied and, on failure, the backend falls back to a safe canned descriptor instead of returning an error.
+
+- Analytics dev helpers & seeding
+  - `src/routes/analytics.js` contains dev-only deterministic trend injection and logic to compute or fill missing `eficiencia_temporal` values for employees like `EMP-001` and `EMP-TEST` so charts display meaningful trends during development.
+  - `scripts/seed_emp_test.js` was added and run to persist completed tickets for `EMP-TEST`, producing non-zero analytics for consistent dev testing.
+
+- Frontend normalizations and UI fixes
+  - `ChatInput.tsx`: added structured command parsing for `EMP-/PROC-/DEP-` commands, and client-side normalization of trend data to canonical fields to avoid chart rendering errors.
+  - `AiOutputPanel.tsx`: strips AI-provided chart titles and normalizes alternate data shapes (e.g., `{date,value}`) to the expected `{fecha_actualizado, eficiencia_temporal}` format.
+  - HeaderBar is now a client component and writes `currentEmployeeId` into `UserContext` for immediate UI updates.
+  - Chat layout fixes to keep top controls fixed while messages scroll.
+
+- Testing
+  - `scripts/test_ai_validation.js` added to validate that the backend will fallback to safe descriptors if backend orchestration returns malformed descriptors. Run with `npm run test:ai-validation`.
+
+

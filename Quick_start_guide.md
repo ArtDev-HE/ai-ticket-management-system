@@ -121,3 +121,17 @@ npm run lint
 ---
 
 That's it — you're ready to run and continue development. If you want, I can also add a small GitHub Actions workflow to run the TypeScript check and smoke tests on PRs.
+
+## Recent changes (quick reference)
+
+- AI proxy & validation: backend `/api/ai/query` returns dev canned descriptors and forwards to n8n in production. AJV validation is applied and the backend will fallback to a safe descriptor when the returned descriptor fails schema validation.
+- Analytics helpers & seeding: dev-only synthetic trend injection for `EMP-001`/`EMP-TEST` and `scripts/seed_emp_test.js` to persist completed tickets for consistent analytics during development.
+- Frontend normalizations: `ChatInput` and `AiOutputPanel` now normalize alternate descriptor shapes (e.g., `{date,value}` → `{fecha_actualizado, eficiencia_temporal}`) so charts render reliably.
+- Quick test command (backend must be running on port 3000):
+
+```powershell
+# Verify backend fallback behavior for malformed n8n responses
+cd C:\Users\Usuario\ticket-system-backend
+npm run test:ai-validation
+```
+
