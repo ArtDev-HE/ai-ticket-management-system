@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import type { TicketListResponse, Ticket } from "@/types/tickets";
 import {
   getTickets,
   getTicketById,
@@ -11,6 +12,15 @@ import {
   getTicketsByFilter,
   getTicketStats,
   updateTicketState,
+} from "@/services/tickets";
+import {
+  acceptTicket,
+  updateHito,
+  reviewTicket,
+  submitKpis,
+  pauseTicket,
+  resumeTicket,
+  requestReassignment,
 } from "@/services/tickets";
 
 /**
@@ -30,9 +40,11 @@ export const useTickets = (filters: Record<string, any> = {}) => {
     isLoading,
     isError,
     refetch,
-  } = useQuery({
+  } = useQuery<TicketListResponse>({
     queryKey: ["tickets", filters],
     queryFn: () => getTickets(filters),
+    // always enabled for list; filters control cached key
+    enabled: true,
   });
 
   // ─── CREATE a new ticket ───────────────────────────────────────────
@@ -43,8 +55,34 @@ export const useTickets = (filters: Record<string, any> = {}) => {
 
   // ─── UPDATE an existing ticket ─────────────────────────────────────
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Record<string, any> }) =>
-      updateTicket(id, data),
+    mutationFn: async ({ id, data }: { id: string; data: Record<string, any> }) => {
+      // Route to specific endpoints based on payload shape
+      if (data?.empleado_id && data?.action === 'accept') {
+        return acceptTicket(id, data.empleado_id);
+      }
+      if (data?.porcentaje !== undefined && data?.completado !== undefined) {
+        return updateHito(id, data.porcentaje, data.completado);
+      }
+      if (data?.accion && (data.accion === 'aprobar' || data.accion === 'rechazar' || data.accion === 'reasignar')) {
+        return reviewTicket(id, data);
+      }
+      if (data?.kpis_especificos) {
+        return submitKpis(id, data.kpis_especificos);
+      }
+      if (data?.pause) {
+        return pauseTicket(id, data.pause);
+      }
+      if (data?.resume) {
+        return resumeTicket(id, data.resume);
+      }
+      if (data?.requestReassignment) {
+        const { empleado_id, razon } = data.requestReassignment;
+        return requestReassignment(id, empleado_id, razon);
+      }
+
+      // Fallback: allow setting estado via updateTicket helper
+      return updateTicket(id, data);
+    },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["tickets"] }),
   });
 
@@ -84,9 +122,9 @@ export const useTickets = (filters: Record<string, any> = {}) => {
  * 🔍 useTicketById - Fetch a single ticket
  */
 export const useTicketById = (id?: string) => {
-  return useQuery({
+  return useQuery<Ticket>({
     queryKey: ["ticket", id],
-    queryFn: () => (id ? getTicketById(id) : null),
+    queryFn: () => getTicketById(id as string),
     enabled: !!id,
   });
 };
@@ -95,9 +133,9 @@ export const useTicketById = (id?: string) => {
  * 👷‍♂️ useTicketsByEmployee - Get tickets for specific employee
  */
 export const useTicketsByEmployee = (employeeId?: string) => {
-  return useQuery({
+  return useQuery<TicketListResponse>({
     queryKey: ["tickets", "employee", employeeId],
-    queryFn: () => (employeeId ? getTicketsByEmployee(employeeId) : []),
+    queryFn: () => getTicketsByEmployee(employeeId as string),
     enabled: !!employeeId,
   });
 };
@@ -106,7 +144,7 @@ export const useTicketsByEmployee = (employeeId?: string) => {
  * 📊 useTicketStats - Dashboard overview
  */
 export const useTicketStats = () => {
-  return useQuery({
+  return useQuery<any>({
     queryKey: ["tickets", "stats"],
     queryFn: getTicketStats,
   });

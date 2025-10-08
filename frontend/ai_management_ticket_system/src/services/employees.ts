@@ -6,7 +6,7 @@ import type {
   CreateEmployeeRequest,
   UpdateEmployeeRequest,
   EmployeeTicketsResponse,
-} from "@/types/empleados";
+} from "@/types/employees";
 
 /**
  * ================================
@@ -20,20 +20,20 @@ import type {
 export const getEmployees = async (
   filters: Record<string, any> = {}
 ): Promise<EmployeeListResponse> => {
-  const res = await api.get("/api/empleados", { params: filters });
-  return res.data;
+  const res = await api.get<EmployeeListResponse>("/api/empleados", { params: filters });
+  return res.data as EmployeeListResponse;
 };
 
 /** 🎯 Get single employee by ID */
 export const getEmployeeById = async (id: string): Promise<Employee> => {
-  const res = await api.get(`/api/empleados/${id}`);
-  return res.data;
+  const res = await api.get<Employee>(`/api/empleados/${id}`);
+  return res.data as Employee;
 };
 
 /** ⚙️ Get employee workload and performance summary */
 export const getEmployeeWorkload = async (id: string): Promise<any> => {
   // You can define a `EmployeeWorkload` type later if needed
-  const res = await api.get(`/api/empleados/${id}/workload`);
+  const res = await api.get<any>(`/api/empleados/${id}/workload`);
   return res.data;
 };
 
@@ -42,16 +42,16 @@ export const getEmployeeTickets = async (
   id: string,
   filters: Record<string, any> = {}
 ): Promise<EmployeeTicketsResponse> => {
-  const res = await api.get(`/api/empleados/${id}/tickets`, { params: filters });
-  return res.data;
+  const res = await api.get<EmployeeTicketsResponse>(`/api/empleados/${id}/tickets`, { params: filters });
+  return res.data as EmployeeTicketsResponse;
 };
 
 /** 🧱 Create a new employee */
 export const createEmployee = async (
   data: CreateEmployeeRequest
 ): Promise<Employee> => {
-  const res = await api.post("/api/empleados", data);
-  return res.data;
+  const res = await api.post<Employee>("/api/empleados", data);
+  return res.data as Employee;
 };
 
 /** 🔄 Update existing employee */
@@ -59,12 +59,12 @@ export const updateEmployee = async (
   id: string,
   data: UpdateEmployeeRequest
 ): Promise<Employee> => {
-  const res = await api.patch(`/api/empleados/${id}`, data);
-  return res.data;
+  const res = await api.patch<Employee>(`/api/empleados/${id}`, data);
+  return res.data as Employee;
 };
 
 /** 🚫 Soft delete (deactivate) employee */
 export const deleteEmployee = async (id: string): Promise<EmployeeResponse> => {
-  const res = await api.delete(`/api/empleados/${id}`);
-  return res.data;
+  const res = await api.delete<EmployeeResponse>(`/api/empleados/${id}`);
+  return res.data as EmployeeResponse;
 };

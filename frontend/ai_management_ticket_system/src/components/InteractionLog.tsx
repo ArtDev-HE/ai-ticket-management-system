@@ -18,12 +18,12 @@ export default function InteractionLog() {
     <section className="flex-1 flex border-r border-gray-200 bg-white">
       {/* 🔹 Right Half - Chat History */}
       <div className="w-1/2 min-w-[50%] overflow-y-auto p-4 border-r border-gray-200">
-        <ChatHistory setAiOutput={setAiOutput} />
+        <ChatHistory messages={[]} />
       </div>
 
       {/* 🔹 Left Half - AI Output Panel */}
       <div className="w-1/2 min-w-[50%] border-r border-gray-200 overflow-y-auto p-4">
-        <AiOutputPanel aiOutput={aiOutput} />
+        <AiOutputPanel output={aiOutput} />
       </div>
     </section>
   );

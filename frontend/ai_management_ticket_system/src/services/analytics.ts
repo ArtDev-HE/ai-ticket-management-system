@@ -19,7 +19,7 @@ export const getEmployeeAnalytics = async (
   filters: Record<string, any> = {}
 ): Promise<EmployeeAnalytics> => {
   const res = await api.get(`/api/analytics/employee/${id}`, { params: filters });
-  return res.data;
+  return res.data as EmployeeAnalytics;
 };
 
 /** ⚙️ Get analytics for a specific procedure */
@@ -28,7 +28,7 @@ export const getProcedureAnalytics = async (
   filters: Record<string, any> = {}
 ): Promise<ProcedureAnalytics> => {
   const res = await api.get(`/api/analytics/procedure/${codigo}`, { params: filters });
-  return res.data;
+  return res.data as ProcedureAnalytics;
 };
 
 /** 🏢 Get analytics for a department */
@@ -37,7 +37,7 @@ export const getDepartmentAnalytics = async (
   filters: Record<string, any> = {}
 ): Promise<DepartmentAnalytics> => {
   const res = await api.get(`/api/analytics/department/${id}`, { params: filters });
-  return res.data;
+  return res.data as DepartmentAnalytics;
 };
 
 /** 🧱 Get analytics for a work line (línea de trabajo) */
@@ -46,5 +46,5 @@ export const getWorkLineAnalytics = async (
   filters: Record<string, any> = {}
 ): Promise<WorkLineAnalytics> => {
   const res = await api.get(`/api/analytics/linea/${id}`, { params: filters });
-  return res.data;
+  return res.data as WorkLineAnalytics;
 };

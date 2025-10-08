@@ -30,16 +30,16 @@ export const getProcedures = async (
 export const getProcedureByCode = async (
   codigo: string
 ): Promise<Procedure> => {
-  const res = await api.get<ProcedureResponse>(`/api/procedimientos/${codigo}`);
-  return res.data.data;
+  const res = await api.get<Procedure>(`/api/procedimientos/${codigo}`);
+  return res.data;
 };
 
 /** 🧱 Create a new procedure */
 export const createProcedure = async (
   data: CreateProcedureRequest
 ): Promise<Procedure> => {
-  const res = await api.post<ProcedureResponse>("/api/procedimientos", data);
-  return res.data.data;
+  const res = await api.post<Procedure>("/api/procedimientos", data);
+  return res.data;
 };
 
 /** 🔄 Update an existing procedure */
@@ -47,17 +47,12 @@ export const updateProcedure = async (
   codigo: string,
   data: UpdateProcedureRequest
 ): Promise<Procedure> => {
-  const res = await api.patch<ProcedureResponse>(
-    `/api/procedimientos/${codigo}`,
-    data
-  );
-  return res.data.data;
+  const res = await api.patch<Procedure>(`/api/procedimientos/${codigo}`, data);
+  return res.data;
 };
 
 /** 🚫 Soft delete (deactivate) a procedure */
 export const deleteProcedure = async (codigo: string): Promise<Procedure> => {
-  const res = await api.delete<ProcedureResponse>(
-    `/api/procedimientos/${codigo}`
-  );
-  return res.data.data;
+  const res = await api.delete<Procedure>(`/api/procedimientos/${codigo}`);
+  return res.data;
 };

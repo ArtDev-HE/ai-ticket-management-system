@@ -6,7 +6,8 @@ import { VisualizationRegistry } from "@/config/VisualizationRegistry";
 
 interface AnalyticsViewProps {
   visualizationKey: keyof typeof VisualizationRegistry;
-  data: any[];
+  // Accept any payload shape — visualizations will validate/render as appropriate
+  data: any;
 }
 
 export default function AnalyticsView({ visualizationKey, data }: AnalyticsViewProps) {
@@ -16,8 +17,8 @@ export default function AnalyticsView({ visualizationKey, data }: AnalyticsViewP
     return <div className="text-red-500">⚠️ Unknown visualization type.</div>;
   }
 
-  // Lazy-load chart component
-  const ChartComponent = dynamic(() => import(`@/components/charts/${template.component}`), {
+  // Lazy-load chart component. We cast to `any` so dynamic import is usable as a React component
+  const ChartComponent: any = dynamic(() => import(`@/components/charts/${template.component}`), {
     ssr: false,
   });
 

@@ -7,6 +7,7 @@ const ticketRoutes = require('./routes/tickets');
 const procedimientosRoutes = require('./routes/procedimientos');
 const empleadosRoutes = require('./routes/empleados');
 const analyticsRoutes = require('./routes/analytics');
+const authRoutes = require('./routes/auth');
 
 const app = express();
 
@@ -25,8 +26,8 @@ pool.query('SELECT NOW()', (err, res) => {
 
 // Health check endpoint
 app.get('/health', (req, res) => {
-  res.json({ 
-    status: 'ok', 
+  res.json({
+    status: 'ok',
     timestamp: new Date().toISOString(),
     database: 'connected'
   });
@@ -37,6 +38,7 @@ app.use('/api/tickets', ticketRoutes);
 app.use('/api/procedimientos', procedimientosRoutes);
 app.use('/api/empleados', empleadosRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/auth', authRoutes);
 
 // 404 handler
 app.use((req, res) => {

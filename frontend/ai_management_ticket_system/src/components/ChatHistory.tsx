@@ -27,11 +27,10 @@ export default function ChatHistory({
           {localMessages.map((msg, idx) => (
             <li
               key={idx}
-              className={`p-2 rounded-lg ${
-                msg.sender === "user"
+              className={`p-2 rounded-lg ${msg.sender === "user"
                   ? "bg-blue-100 text-blue-900 self-end"
                   : "bg-green-100 text-green-900 self-start"
-              }`}
+                }`}
             >
               <strong>{msg.sender === "user" ? "You:" : "AI:"}</strong>{" "}
               {msg.text}

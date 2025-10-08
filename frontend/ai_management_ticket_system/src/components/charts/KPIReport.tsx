@@ -20,10 +20,10 @@ interface KPIReportProps {
   };
 }
 
-const Card = ({ title, value, accent }: { title: string; value: string | number | null; accent: string }) => (
+const Card = ({ title, value, accent }: { title: string; value?: string | number | null; accent: string }) => (
   <div className={`flex flex-col items-center justify-center p-4 rounded-2xl shadow-sm bg-white border-t-4 ${accent} min-w-[140px]`}>
     <p className="text-sm font-semibold text-gray-500">{title}</p>
-    <p className="text-lg font-bold text-gray-800 mt-1">{value ?? "—"}</p>
+    <p className="text-lg font-bold text-gray-800 mt-1">{value ?? ""}</p>
   </div>
 );
 
@@ -43,7 +43,7 @@ export default function KPIReport({ data }: KPIReportProps) {
   return (
     <div className="flex flex-wrap gap-4 bg-gray-50 p-4 rounded-2xl shadow-inner">
       {metrics.map((m) => (
-        <Card key={m.title} title={m.title} value={m.value} accent={m.accent} />
+        <Card key={m.title} title={m.title} value={m.value as any} accent={m.accent} />
       ))}
     </div>
   );
