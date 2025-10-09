@@ -5,10 +5,10 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "test:ai-validation": "node scripts/test_ai_validation.js",
+  "dev:test:ai-validation": "node devops/test_ai_validation.js",
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "seed:emp-test": "node scripts/seed_emp_test.js"
+  "dev:seed:emp-test": "node devops/seed_emp_test.js"
   },
   "keywords": [],
   "author": "",

@@ -1,42 +1,8 @@
-/*
-  Simple smoke test script for frontend-backend integration.
-  Usage: node scripts/smokeTests.js
-  Ensure you run this from the frontend folder: frontend/ai_management_ticket_system
-  Requires: node (v16+), npm install axios
-*/
-
-const axios = require('axios');
-const { v4: uuidv4 } = require('uuid');
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-const api = axios.create({ baseURL: API_BASE, headers: { 'Content-Type': 'application/json' } });
-
-// Dev auth: if backend exposes /api/auth/dev-login use it, otherwise use a dev token fallback
-const DEV_TOKEN_FALLBACK = 'dev-token-x-please-replace';
-async function ensureDevAuth() {
-    try {
-        // Try backend dev-login endpoint
-        const res = await api.post('/api/auth/dev-login', { username: 'dev', password: 'dev' });
-        if (res && res.data && res.data.token) {
-            api.defaults.headers.common['Authorization'] = `Bearer ${res.data.token}`;
-            return;
-        }
-    } catch (e) {
-        // ignore, we'll fallback
-    }
-    // Fallback: set a static dev token in header
-    api.defaults.headers.common['Authorization'] = `Bearer ${DEV_TOKEN_FALLBACK}`;
-}
-
-async function run() {
-    try {
-        console.log('1) Health check');
-        const h = await api.get('/health');
-        console.log('   health:', h.data);
-
-        console.log('\n2) List tickets (should return array)');
-        const list = await api.get('/api/tickets', { params: { limit: 5 } });
-        console.log('   tickets count:', Array.isArray(list.data) ? list.data.length : (list.data?.length || 0));
+// Guarded placeholder: use devops/smokeTests_frontend.js instead
+console.error('This script has been moved to devops/smokeTests_frontend.js and will not run from frontend/scripts by default.');
+console.error('To run the dev smoke tests, set ALLOW_DEV_TESTS=true and run from repo root:');
+console.error("$Env:ALLOW_DEV_TESTS='true'; node devops/smokeTests_frontend.js");
+process.exit(1);
 
         // Ensure test procedure exists so KPIs submission won't fail
         const testProcedureCode = 'PROC-001';
