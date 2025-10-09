@@ -11,6 +11,9 @@
 - Dev environment: Frontend on port 3001 (recommended), backend on 3000. API baseURL configured in `frontend/src/services/api.ts`.
 - Dev auth shim: `POST /api/auth/dev-login` returns a static dev token for local development flows.
 - AI mock: deterministic mock located in `frontend/src/services/ai.ts` (generates text + visualization descriptors).
+- Chat export/import: server-side HMAC signing is implemented in `src/routes/chat.js`. The frontend export routine requests a signature for the exported payload and, when received, embeds the signed JSON payload as a single-line JSON block inside the exported Markdown file between the HTML comment markers:
+- <!--CHAT_EXPORT_JSON_START ... CHAT_EXPORT_JSON_END-->
+- The import flow extracts this embedded JSON and POSTs it to `/api/chat/import` where the server verifies the HMAC and ownership (the importing user must match the payload.employeeId). If verification fails the import is rejected.
 - Visualization system:
   - `frontend/src/config/VisualizationRegistry.ts` maps visualization keys to templates (label, requiredFields, component reference).
   - `frontend/src/utils/visualizationValidator.ts` validates descriptor data against template.requiredFields.
@@ -18,9 +21,11 @@
 - Chat & interaction:
   - `ChatInput.tsx` parses structured commands (employee/procedure/department) and calls analytics services or AI mock.
   - `AiOutputPanel.tsx` sanitizes AI output (strips `title`/`label` from descriptor data) and passes validated descriptor to `AnalyticsView`.
+  - AiOutputPanel update rules: the frontend will only update the visualization panel when the message is a recognized structured command (EMP-/PROC-/DEP-) or when the AI response explicitly contains both a `visualization` descriptor and the user's prompt expresses visualization intent (keywords like "chart", "plot", "visualize", "show trend"). This prevents spurious visual updates from very short or ambiguous prompts.
   - `ChatHistory.tsx` is controlled by the page, supports an "AI is thinking..." pending item, auto-scroll, and local persistence (localStorage key `ai_chat_messages`, capped to 500 messages).
 - User context:
   - `frontend/src/context/UserContext.tsx` provides `currentEmployeeId` and setter for in-app dev selection. HeaderBar writes to this context so EmployeeInfoPanel updates immediately.
+  - Session semantics: recent dev changes persist the dev token and `currentEmployeeId` in `sessionStorage` (per-tab lifetime) rather than global `localStorage`. Chat messages are persisted per-employee under keys like `ai_chat_messages:${employeeId}` and capped at 500 messages.
 - Smoke tests: `frontend/scripts/smokeTests.js` exercises core API flows and auto-creates a test procedure when missing.
 
 
@@ -40,6 +45,7 @@
 - Backend
   - `src/server.js` - Express app and route registrations.
   - `src/routes/*.js` - routes: `tickets.js`, `procedimientos.js`, `empleados.js`, `analytics.js`, plus `auth.js` (dev-login).
+  - `src/routes/chat.js` - export/import endpoints that sign and verify exported chat payloads. Signing uses HMAC-SHA256 with `CHAT_EXPORT_SECRET` and requires the backend environment variable `CHAT_EXPORT_SECRET` to be configured in production. The import endpoint verifies that the signed payload.employeeId matches `req.user.employeeId` (requires `verifyJwt` middleware).
   - `src/config/db.js` - Postgres pool connector.
 
 

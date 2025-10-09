@@ -36,11 +36,13 @@ npm install
 
 ```
 DB_USER=your_db_user
-DB_PASSWORD=your_db_password
-DB_HOST=your_db_host
+## Ports
+
+- Backend: 3000
+- Frontend (Next.js): 3001 (recommended)
 DB_NAME=ticket_management_system
 PORT=3000
-```
+5. Ensure Postgres is reachable. For Supabase, use the connection string and set `ssl: { rejectUnauthorized: false }` in `src/config/db.js`.
 
 5. Ensure Postgres is reachable. For Supabase, use the connection string and set `ssl: { rejectUnauthorized: false }` in `src/config/db.js`.
 
@@ -60,19 +62,16 @@ npm run dev
 Terminal 2 - Frontend
 
 ```powershell
-cd c:\Users\Usuario\ticket-system-backend\frontend\ai_management_ticket_system
 npm run dev -- -p 3001
 # Starts Next.js app on port 3001
 ```
 
 
-## Useful developer commands
 
 - TypeScript check (frontend):
 
 ```powershell
 cd frontend\ai_management_ticket_system
-npx -y tsc --noEmit
 ```
 
 - Run smoke tests (frontend script that exercises the API):
@@ -80,13 +79,17 @@ npx -y tsc --noEmit
 ```powershell
 cd frontend\ai_management_ticket_system
 node scripts\smokeTests.js
-```
+- If Export/Import of chat MD fails: the frontend embeds a signed JSON payload in the exported markdown between the markers
+- <!--CHAT_EXPORT_JSON_START and CHAT_EXPORT_JSON_END--> (single-line JSON). The import flow extracts that JSON and posts it to the backend `/api/chat/import` endpoint for server-side verification. If you are testing locally, ensure the backend `CHAT_EXPORT_SECRET` is set and that the frontend `BACKEND_BASE` points to `http://localhost:3000`.
 
-- Run quick linter (if configured):
-
-```powershell
+ - Dev login: POST `/api/auth/dev-login` (used by `frontend/src/services/auth.ts`) returns a static dev token used during local development. Note: we now persist the token and `currentEmployeeId` in sessionStorage by default in recent dev changes (session lifetime tied to the browser tab). For production, migrate to HttpOnly cookies.
+ - Change dev `currentEmployeeId` quickly: use the input control in the HeaderBar; it updates `UserContext` and `EmployeeInfoPanel` immediately.
+ - Chat history persistence: stored in `sessionStorage` namespaced per employee under keys like `ai_chat_messages:${employeeId}` and capped at 500 messages. Exported MD files embed a signed JSON payload that can be re-imported via the UI.
 cd frontend\ai_management_ticket_system
 npm run lint
+- Export / Import: Exported markdown now attempts to obtain a server-side HMAC signature for the exported chat payload and embeds the signed JSON header (between <!--CHAT_EXPORT_JSON_START ... CHAT_EXPORT_JSON_END-->). Import logic will extract that header and POST to `/api/chat/import` for verification and ownership checks.
+- Auth/session: During recent dev iterations, frontend uses sessionStorage to hold the in-memory dev token and `currentEmployeeId`. This is intended for dev only; production must use secure cookies.
+- Dev scripts moved: dev seeding and test scripts are now under `devops/` and require explicit environment guards such as `ALLOW_DEV_SEEDS=true` or `ALLOW_DEV_TESTS=true` to run.
 ```
 
 

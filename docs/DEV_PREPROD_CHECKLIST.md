@@ -66,8 +66,11 @@ Detailed items (what to remove/gate/replace)
 		 - Note: the signing uses `CHAT_EXPORT_SECRET` and may fall back to `JWT_SECRET` or a dev secret if env not set.
 	 - Why temporary: the flow is useful for dev but must be configured securely for production — especially key management and verification.
 	 - Suggested remediation:
-		 - Require `CHAT_EXPORT_SECRET` to be provided in production (fail fast on startup if absent).
-		 - Audit the export format, signature algorithm, and ensure no sensitive data is included in exports.
+	 	 - Require `CHAT_EXPORT_SECRET` to be provided in production (fail fast on startup if absent). Do not fall back to `JWT_SECRET` or a dev secret in production.
+	 	 - Audit the export format and signature algorithm. The current export embeds a single-line signed JSON payload between HTML comment markers in the exported Markdown file:
+	 		 - <!--CHAT_EXPORT_JSON_START {..signed json..} CHAT_EXPORT_JSON_END-->
+	 	 - Ensure the exported JSON excludes any sensitive PII or tokens. Consider encrypting exports at rest or restricting export capability to authorized roles only.
+	 	 - Ensure the import endpoint enforces ownership (payload.employeeId === req.user.employeeId) and verifies the HMAC signature before accepting data.
 
 6) Debug UI and client fallbacks
 	 - Files / places:
@@ -78,6 +81,35 @@ Detailed items (what to remove/gate/replace)
 	 - Suggested remediation:
 		 - Remove or gate debug UI behind `NEXT_PUBLIC_DEV_UI=true` (default off) and remove Set Employee controls from production builds.
 		 - Replace fallbacks with clear loading states or server-driven mocks only used in staging/test environments.
+
+Additional remediation: sessionStorage-based tokens
+-------------------------------------------------
+- Recent dev iterations store the dev access token and `currentEmployeeId` in `sessionStorage` (per-tab). While this reduces accidental cross-tab token leakage during development, it is still unsuitable for production because sessionStorage tokens are accessible to JavaScript (XSS risk).
+- Suggested remediation:
+	- Migrate to HttpOnly, Secure cookies for access/refresh tokens before production. Implement CSRF protections and refresh-rotation if using cookies.
+	- Update frontend `auth.ts` helpers and `UserContext` to read the authenticated user's employeeId from `/api/auth/me` on startup instead of relying on client-stored tokens.
+
+Devops script locations and guards
+---------------------------------
+- Dev seeding and test scripts have been moved to `devops/` and require explicit environment guards such as `ALLOW_DEV_SEEDS=true` or `ALLOW_DEV_TESTS=true` to run. Confirm the following files are in `devops/` and gated:
+	- `devops/seed_emp_test.js`
+	- `devops/test_ai_validation.js`
+	- `devops/smokeTests_frontend.js`
+
+CI checks to add (recommended additions)
+--------------------------------------
+- In addition to the grep-based checks, add a CI startup assertion job that runs a short Node script to start the backend with `NODE_ENV=production` and ensures it fails fast if `JWT_SECRET` or `CHAT_EXPORT_SECRET` are missing. This prevents accidental deploys with dev fallbacks.
+
+Acceptance & Release gate (updated)
+-----------------------------------
+Before marking a release candidate as ready for production, complete the following (updates):
+
+1. Run the CI pre-prod scan and fix any findings.
+2. Ensure `JWT_SECRET` and `CHAT_EXPORT_SECRET` are configured in the deployment environment (and remove any dev fallback secrets).
+3. Confirm no dev-only UI elements are visible in a production build.
+4. Ensure the import endpoint enforces HMAC verification and ownership checks (payload.employeeId === authenticated employee id).
+5. Run the devops seed/smoke scripts only against a disposable test DB and verify they refuse to run without explicit env guards.
+6. Merge a final PR that documents the remediation and changes in `docs/DEV_PREPROD_CHECKLIST.md`.
 
 7) Local storage and token handling
 	 - Keys in use: `auth_token`, `current_employee`, `ai_chat_messages` (legacy per-employee keys)

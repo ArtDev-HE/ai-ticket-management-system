@@ -100,7 +100,7 @@ Small notes
   - Purpose: Accept `visualizationKey` + `data` and render the chart component mapped to the key. Chart heading/title uses the static label from `VisualizationRegistry` rather than AI-provided titles.
 
 - frontend/src/components/ChatHistory.tsx (UPDATED)
-  - Purpose: Controlled rendering of messages. Auto-scrolls to the latest message, shows pending AI message with 'italic/animate-pulse' style, supports Export (Markdown) and Clear actions. Messages persisted to `localStorage` with cap 500.
+  - Purpose: Controlled rendering of messages. Auto-scrolls to the latest message, shows pending AI message with 'italic/animate-pulse' style, supports Export (Markdown) and Clear actions. Messages persisted to `sessionStorage` namespaced per employee (e.g., `ai_chat_messages:${employeeId}`) and capped at 500 messages to avoid unbounded growth.
 
 - frontend/src/components/HeaderBar.tsx (UPDATED)
   - Purpose: Top bar with dev controls. Now reads/writes `currentEmployeeId` via `UserContext` for immediate UI reflection.
@@ -122,6 +122,31 @@ Small notes
 
 - frontend/src/utils/visualizationValidator.ts (NEW)
   - Purpose: Validate that visualization descriptor data contains required fields before rendering. Prevents charts from rendering on incomplete data.
+
+- AI behavior note:
+  - The AI mock was updated to be intent-aware: it only returns visualization descriptors when the user's prompt includes explicit visualization intent (keywords like "chart", "plot", "visualize", "show trend"). Very short or ambiguous prompts return a neutral clarification instead of triggering visual updates.
+
+- Session/auth note:
+  - Recent dev iterations persist the dev token and `currentEmployeeId` in `sessionStorage` (tab-scoped). This reduces accidental cross-tab token reuse during development, but is unsuitable for production. For production, migrate to HttpOnly, Secure cookies and fetch the mapped `employeeId` from `/api/auth/me` on app load.
+
+- Devops note:
+  - Dev seeding and test scripts have been moved to `devops/` and require explicit guards such as `ALLOW_DEV_SEEDS=true` or `ALLOW_DEV_TESTS=true` to run. Confirm canonical scripts live under `devops/` (e.g., `devops/seed_emp_test.js`, `devops/test_ai_validation.js`).
+
+## Export / Import (signed)
+
+- The project implements a server-side HMAC signing flow for exported chats. Key points:
+  - Backend endpoint `POST /api/chat/export` can sign a chat payload using `CHAT_EXPORT_SECRET` and return a signed payload.
+  - The frontend export routine, when it obtains the signature, embeds the signed JSON payload as a single-line JSON block inside the exported Markdown file between these HTML comment markers:
+    - <!--CHAT_EXPORT_JSON_START {..signed json..} CHAT_EXPORT_JSON_END-->
+  - The import routine extracts that embedded JSON and POSTs it to `/api/chat/import` for server-side HMAC verification and ownership checks. The server verifies the HMAC and that `payload.employeeId === req.user.employeeId` before returning the validated messages to the client.
+
+## AiOutputPanel update rules
+
+- The UI updates the visualization panel only when:
+  1. The message originated from a recognized structured command (EMP-/PROC-/DEP-), or
+  2. The AI response contains a `visualization` descriptor and the user's prompt expresses visualization intent (keyword-based check).
+
+- This avoids spurious visual updates for very short or ambiguous prompts.
 
 
 ## Notable implementation notes and rationale
