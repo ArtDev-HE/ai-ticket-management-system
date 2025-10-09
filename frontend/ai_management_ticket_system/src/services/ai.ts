@@ -19,6 +19,12 @@ export const generateAnswer = async (prompt: string): Promise<AiResponse> => {
     // Simulate latency
     await new Promise((r) => setTimeout(r, 600));
 
+    // If the prompt is extremely short or looks like a single letter/garbage, return a neutral clarification
+    const trimmed = (prompt || '').trim();
+    if (trimmed.length <= 2 || /^[a-zA-Z]$/.test(trimmed)) {
+        return { text: `I didn't understand that. Could you rephrase or ask for a specific visualization (for example: "show efficiency trend")?` };
+    }
+
     // Simple mock response based on prompt keywords
     const text = `AI summary for: "${prompt.slice(0, 120)}"\n\n- Suggested action: review KPIs\n- Confidence: 72%`;
 
@@ -51,9 +57,12 @@ export const generateAnswer = async (prompt: string): Promise<AiResponse> => {
 
 export const generateVisualizationDescriptor = async (prompt: string): Promise<AiResponse> => {
     const base = await generateAnswer(prompt);
+    // Only produce a visualization descriptor when prompt contains explicit visualization intent.
+    const intentRE = /\b(show|display|plot|chart|trend|kpi|summary|distribution|visuali|draw|graph)\b/i;
+    const hasIntent = intentRE.test(prompt);
 
-    // Naive mapping: if prompt mentions 'trend' or 'efficiency', return trendline descriptor
-    if (/trend|efficien|efficiency|eficien/gi.test(prompt)) {
+    // Naive mapping: if prompt mentions 'trend' or 'efficiency' and user shows intent, return trendline descriptor
+    if (hasIntent && /trend|efficien|efficiency|eficien/gi.test(prompt)) {
         // Transform efficiency_trend -> required fields: fecha_actualizado, eficiencia_temporal (0-1)
         const transformed = (base.analytics.efficiency_trend || []).map((p: any) => ({
             fecha_actualizado: p.date,
@@ -71,7 +80,7 @@ export const generateVisualizationDescriptor = async (prompt: string): Promise<A
         };
     }
 
-    if (/ticket|estado|distribution|distribution/i.test(prompt)) {
+    if (hasIntent && /(ticket|estado|distribution|distribution)/i.test(prompt)) {
         return {
             text: base.text,
             analytics: base.analytics,
@@ -82,8 +91,15 @@ export const generateVisualizationDescriptor = async (prompt: string): Promise<A
             },
         };
     }
+    // If prompt did not express visualization intent, return text-only response (no visualization)
+    if (!hasIntent) {
+        return {
+            text: base.text,
+            analytics: base.analytics,
+        };
+    }
 
-    // Default to KPI report
+    // If we reach here, user showed intent but no other mapping matched — return a KPI report visualization by default.
     return {
         text: base.text,
         analytics: base.analytics,

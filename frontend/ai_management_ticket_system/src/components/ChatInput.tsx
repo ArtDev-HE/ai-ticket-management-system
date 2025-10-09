@@ -9,7 +9,7 @@ const regexes = {
   employeeId: /(EMP-[A-Za-z0-9_-]+)/i,
 };
 
-export default function ChatInput({ onSend, onUserSend }: { onSend?: (resp: AiResponse) => void; onUserSend?: (text: string) => void }) {
+export default function ChatInput({ onSend, onUserSend }: { onSend?: (resp: AiResponse, isCommand?: boolean) => void; onUserSend?: (text: string) => void }) {
   const [value, setValue] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -99,7 +99,7 @@ export default function ChatInput({ onSend, onUserSend }: { onSend?: (resp: AiRe
             },
             analytics,
           };
-          onSend?.(resp);
+          onSend?.(resp, true);
           return;
         } catch (err: any) {
           onSend?.({ text: `Error: employee ${empId} not found or analytics unavailable.` });
@@ -122,7 +122,7 @@ export default function ChatInput({ onSend, onUserSend }: { onSend?: (resp: AiRe
             },
             analytics,
           };
-          onSend?.(resp);
+          onSend?.(resp, true);
           return;
         } catch (err: any) {
           onSend?.({ text: `Error: employee ${empId} not found or analytics unavailable.` });
@@ -149,7 +149,7 @@ export default function ChatInput({ onSend, onUserSend }: { onSend?: (resp: AiRe
             },
             analytics,
           };
-          onSend?.(resp);
+          onSend?.(resp, true);
           return;
         } catch (err: any) {
           onSend?.({ text: `Error: procedure ${proc} not found or analytics unavailable.` });
@@ -170,7 +170,7 @@ export default function ChatInput({ onSend, onUserSend }: { onSend?: (resp: AiRe
             },
             analytics,
           };
-          onSend?.(resp);
+          onSend?.(resp, true);
           return;
         } catch (err: any) {
           onSend?.({ text: `Error: department ${dep} not found or analytics unavailable.` });
@@ -181,7 +181,13 @@ export default function ChatInput({ onSend, onUserSend }: { onSend?: (resp: AiRe
       // If no command matched, fallback to the AI mock or backend depending on env
       const res = await getAiDescriptor(value);
       console.log('[ChatInput] received AI response:', res);
-      onSend?.(res as AiResponse);
+      // If the AI returned a visualization descriptor, treat this as a command only when
+      // the user's prompt contains explicit visualization intent (e.g., show, display, plot).
+      const isViz = !!(res && (res as any).visualization);
+      const intentRE = /\b(show|display|plot|chart|trend|kpi|summary|distribution|visuali|draw|graph)\b/i;
+      const isIntent = intentRE.test(text);
+      const isCommandFromAi = Boolean(isViz && isIntent);
+      onSend?.(res as AiResponse, isCommandFromAi);
     } finally {
       setLoading(false);
     }

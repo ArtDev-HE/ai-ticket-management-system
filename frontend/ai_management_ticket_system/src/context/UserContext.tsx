@@ -18,17 +18,9 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
         const stored = typeof window !== 'undefined' ? sessionStorage.getItem(STORAGE_KEY) : null;
         if (stored) setCurrentEmployeeIdState(stored);
 
-        // Clear session on tab/window close to force login next open
-        const handleBeforeUnload = () => {
-            try {
-                sessionStorage.removeItem('auth_token');
-                sessionStorage.removeItem(STORAGE_KEY);
-            } catch (e) { /* ignore */ }
-        };
-        if (typeof window !== 'undefined') window.addEventListener('beforeunload', handleBeforeUnload);
-        return () => {
-            if (typeof window !== 'undefined') window.removeEventListener('beforeunload', handleBeforeUnload);
-        };
+        // Do not clear sessionStorage on refresh — keep the authenticated session across reloads.
+        // Explicit logout should clear sessionStorage via the auth service.
+        return;
     }, []);
 
     useEffect(() => {

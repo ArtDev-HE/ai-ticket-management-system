@@ -11,23 +11,38 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
     const [checking, setChecking] = useState(true);
 
     useEffect(() => {
-        const token = auth.getToken();
-        // allow public routes (login, health) to render even without token
+        let mounted = true;
         const publicPaths = ['/login', '/health'];
-        if (!token && pathname && publicPaths.includes(pathname)) {
-            setChecking(false);
-            return;
-        }
-        if (!token) {
-            // ensure local session state cleared
-            try { auth.logout(); } catch (e) { /* ignore */ }
-            const returnTo = typeof window !== 'undefined' ? window.location.pathname : '/';
-            router.replace(`/login?returnTo=${encodeURIComponent(returnTo)}`);
-            return;
-        }
-        // small delay to avoid flicker if needed
-        setTimeout(() => setChecking(false), 50);
-    }, [router]);
+
+        const check = async () => {
+            // immediate read
+            let token = auth.getToken();
+            if (!token && pathname && publicPaths.includes(pathname)) {
+                if (mounted) setChecking(false);
+                return;
+            }
+
+            // retry a couple times with short backoff to avoid false redirects during refresh/hot-reload
+            const delays = [100, 300];
+            for (const d of delays) {
+                if (token) break;
+                await new Promise(r => setTimeout(r, d));
+                token = auth.getToken();
+            }
+
+            if (!token) {
+                try { auth.logout(); } catch (e) { /* ignore */ }
+                const returnTo = typeof window !== 'undefined' ? window.location.pathname : '/';
+                if (mounted) router.replace(`/login?returnTo=${encodeURIComponent(returnTo)}`);
+                return;
+            }
+
+            if (mounted) setChecking(false);
+        };
+
+        check();
+        return () => { mounted = false; };
+    }, [router, pathname]);
 
     if (checking) return <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Loading...</div>;
     return <>{children}</>;

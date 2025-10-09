@@ -43,8 +43,8 @@ export default function ChatHistory({
           )}
           {onImport && (
             <label className="text-sm px-2 py-1 bg-white border rounded cursor-pointer">
-              Import
-              <input type="file" accept="application/json" style={{ display: 'none' }} onChange={(e) => {
+              Import MD
+              <input type="file" accept=".md,application/json" style={{ display: 'none' }} onChange={(e) => {
                 const f = e.target.files && e.target.files[0];
                 if (f) onImport(f);
                 e.currentTarget.value = '';

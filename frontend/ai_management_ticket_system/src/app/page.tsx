@@ -8,6 +8,9 @@ import { useState, useEffect, useCallback } from 'react';
 import { useUser } from '@/context/UserContext';
 import type { AiResponse } from '@/services/ai';
 
+// Backend base url (override with NEXT_PUBLIC_BACKEND_URL)
+const BACKEND_BASE = typeof process !== 'undefined' && process.env.NEXT_PUBLIC_BACKEND_URL ? process.env.NEXT_PUBLIC_BACKEND_URL : 'http://localhost:3000';
+
 interface ChatMessage {
   sender: 'user' | 'ai';
   text: string;
@@ -81,23 +84,45 @@ export default function Home() {
   };
 
   const exportMessagesAsMd = () => {
-    const lines: string[] = [];
-    lines.push(`# Chat export (${new Date().toISOString()})`);
-    lines.push('');
-    for (const m of messages) {
-      const time = m.createdAt ?? '';
-      const who = m.sender === 'user' ? 'You' : 'AI';
-      lines.push(`- ${time} — **${who}:** ${m.text}`);
-    }
-    const blob = new Blob([lines.join('\n')], { type: 'text/markdown' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `chat-export-${new Date().toISOString()}.md`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
+    (async () => {
+      const mdLines: string[] = [];
+      mdLines.push(`# Chat export (${new Date().toISOString()})`);
+      mdLines.push('');
+      for (const m of messages) {
+        const time = m.createdAt ?? '';
+        const who = m.sender === 'user' ? 'You' : 'AI';
+        mdLines.push(`- ${time} — **${who}:** ${m.text}`);
+      }
+
+      // Try to get a server signature and embed it in the MD as a JSON HTML comment header
+      let header = '';
+      try {
+        const payload = { employeeId: currentEmployeeId, exportedAt: new Date().toISOString(), messages };
+        const token = sessionStorage.getItem('auth_token');
+        const res = await fetch(`${BACKEND_BASE}/api/chat/export`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+          body: JSON.stringify(payload),
+        });
+        if (res.ok) {
+          const body = await res.json();
+          const signed = { ...payload, signature: body.signature };
+          header = `<!--CHAT_EXPORT_JSON_START\n${JSON.stringify(signed)}\nCHAT_EXPORT_JSON_END-->\n\n`;
+        }
+      } catch (e) {
+        // ignore signature errors — fallback to plain MD
+      }
+
+      const blob = new Blob([header + mdLines.join('\n')], { type: 'text/markdown' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `chat-export-${new Date().toISOString()}.md`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    })();
   };
 
   const handleExport = useCallback(async () => {
@@ -109,7 +134,7 @@ export default function Home() {
         messages,
       };
       const token = sessionStorage.getItem('auth_token');
-      const res = await fetch('/api/chat/export', {
+      const res = await fetch(`${BACKEND_BASE}/api/chat/export`, {
         method: 'POST',
         headers: {
           'content-type': 'application/json',
@@ -136,20 +161,32 @@ export default function Home() {
   const handleImportFile = useCallback(async (file: File) => {
     try {
       const raw = await file.text();
-      const parsed = JSON.parse(raw);
+      // Detect embedded signed JSON header in MD exports
+      const startMarker = '<!--CHAT_EXPORT_JSON_START';
+      const endMarker = 'CHAT_EXPORT_JSON_END-->';
+      let jsonText: string | null = null;
+      const startIdx = raw.indexOf(startMarker);
+      if (startIdx !== -1) {
+        const afterStart = raw.indexOf('\n', startIdx);
+        const endIdx = raw.indexOf(endMarker, afterStart >= 0 ? afterStart : startIdx);
+        if (endIdx !== -1) {
+          jsonText = raw.substring(afterStart + 1, endIdx).trim();
+        }
+      }
+      const parsed = jsonText ? JSON.parse(jsonText) : JSON.parse(raw);
       // Basic validation
       if (!parsed || !parsed.signature || !parsed.messages) {
         alert('Invalid import file: missing signature or messages');
         return;
       }
       const token = sessionStorage.getItem('auth_token');
-      const res = await fetch('/api/chat/import', {
+      const res = await fetch(`${BACKEND_BASE}/api/chat/import`, {
         method: 'POST',
         headers: {
           'content-type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: raw,
+        body: JSON.stringify(parsed),
       });
       if (!res.ok) {
         const txt = await res.text();
@@ -177,15 +214,16 @@ export default function Home() {
       <HeaderBar />
 
       <main className="flex flex-1 overflow-hidden">
-        <InteractionLog aiOutput={aiOutput} messages={messages} onClear={clearMessages} onExport={handleExport} onImport={handleImportFile} />
+        <InteractionLog aiOutput={aiOutput} messages={messages} onClear={clearMessages} onExport={exportMessagesAsMd} onImport={handleImportFile} />
         <EmployeeInfoPanel />
       </main>
 
       <ChatInput
-        onSend={(resp) => {
-          console.log('[Page] received ai response', resp);
-          setAiOutput(resp);
-          // replace pending AI with real response text
+        onSend={(resp, isCommand) => {
+          console.log('[Page] received ai response', resp, 'isCommand=', isCommand);
+          // Only update the AiOutputPanel when this was a recognized command
+          if (isCommand) setAiOutput(resp);
+          // Regardless, replace pending AI message in the chat with the textual response
           if (resp && typeof resp === 'object') {
             replacePendingAi(resp.text ?? 'AI responded');
           }
