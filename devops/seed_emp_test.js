@@ -2,17 +2,18 @@
 // This file is intended for local/dev usage only. It will refuse to run unless ALLOW_DEV_SEEDS=true
 
 if (process.env.NODE_ENV === 'production') {
-  console.error('Refusing to run dev seed in production.');
-  process.exit(1);
+    console.error('Refusing to run dev seed in production.');
+    process.exit(1);
 }
 if (process.env.ALLOW_DEV_SEEDS !== 'true') {
-  console.error('To run this seeding script, set ALLOW_DEV_SEEDS=true in your environment. Example (PowerShell):');
-  console.error("$Env:ALLOW_DEV_SEEDS='true'; node devops/seed_emp_test.js");
-  process.exit(1);
+    console.error('To run this seeding script, set ALLOW_DEV_SEEDS=true in your environment. Example (PowerShell):');
+    console.error("$Env:ALLOW_DEV_SEEDS='true'; node devops/seed_emp_test.js");
+    process.exit(1);
 }
 
 const pool = require('../src/config/db');
 const { v4: uuidv4 } = require('uuid');
+const bcrypt = require('bcryptjs');
 
 (async () => {
     try {
@@ -67,6 +68,33 @@ const { v4: uuidv4 } = require('uuid');
                 ]
             );
             console.log('Inserted', id, t.titulo);
+        }
+
+        // Optionally create two dev users in `users` table with bcrypt-hashed passwords
+        try {
+            const usersToCreate = [
+                { username: process.env.DEV_USER_1 || 'emp-test', employeeId: process.env.DEV_EMP_1 || 'EMP-TEST', password: process.env.DEV_PASS_1 || 'dev' },
+                { username: process.env.DEV_USER_2 || 'emp-001', employeeId: process.env.DEV_EMP_2 || 'EMP-001', password: process.env.DEV_PASS_2 || 'dev' }
+            ];
+
+            // Check if users table exists
+            const ures = await pool.query("SELECT 1 FROM information_schema.tables WHERE table_name='users'");
+            if (ures.rows.length > 0) {
+                for (const u of usersToCreate) {
+                    const exists = await pool.query('SELECT id FROM users WHERE username = $1 LIMIT 1', [u.username]);
+                    if (exists.rows.length === 0) {
+                        const hash = await bcrypt.hash(u.password, 10);
+                        await pool.query(`INSERT INTO users (id, username, password_hash, employee_id) VALUES ($1,$2,$3,$4)`, [uuidv4(), u.username, hash, u.employeeId]);
+                        console.log('Inserted dev user:', u.username, '->', u.employeeId);
+                    } else {
+                        console.log('Dev user already exists:', u.username);
+                    }
+                }
+            } else {
+                console.log('No users table found; skipping dev user creation.');
+            }
+        } catch (err) {
+            console.log('Dev user creation skipped (error):', err.message || err);
         }
 
         console.log('Seeding complete.');

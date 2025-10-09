@@ -1,5 +1,5 @@
 import "../styles/globals.css";
-import Providers from "@/components/Providers";
+import AppRootClient from '@/components/AppRootClient';
 
 export const metadata = {
   title: "AI Ticket Management System",
@@ -10,7 +10,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body>
-        <Providers>{children}</Providers>
+        <AppRootClient>{children}</AppRootClient>
       </body>
     </html>
   );

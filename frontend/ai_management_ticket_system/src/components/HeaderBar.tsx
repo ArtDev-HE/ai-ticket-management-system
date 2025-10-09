@@ -1,19 +1,22 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useUser } from '@/context/UserContext';
+import auth from '@/services/auth';
+import { useRouter } from 'next/navigation';
 
 export default function HeaderBar() {
   const { currentEmployeeId, setCurrentEmployeeId } = useUser();
-  const [emp, setEmp] = useState<string>(currentEmployeeId || '');
+  const router = useRouter();
 
   useEffect(() => {
-    setEmp(currentEmployeeId || '');
+    // nothing for now
   }, [currentEmployeeId]);
 
-  const save = () => {
-    setCurrentEmployeeId(emp || null);
-    console.log('[HeaderBar] set current employee to', emp);
+  const onLogout = () => {
+    auth.logout();
+    setCurrentEmployeeId(null);
+    router.replace('/login');
   };
 
   return (
@@ -23,15 +26,9 @@ export default function HeaderBar() {
         <h1 className="text-xl font-bold">AI Ticket System Dashboard</h1>
       </div>
 
-      {/* Dev-only: quick select employee id to drive EmployeeInfoPanel */}
       <div className="flex items-center gap-2">
-        <input
-          value={emp}
-          onChange={(e) => setEmp(e.target.value)}
-          placeholder="EMP-001"
-          className="px-2 py-1 rounded text-black"
-        />
-        <button onClick={save} className="bg-white text-orange-500 px-3 py-1 rounded">Set Employee</button>
+        <div className="text-sm mr-3">{currentEmployeeId ? `Employee: ${currentEmployeeId}` : 'Not signed in'}</div>
+        <button onClick={onLogout} className="bg-white text-orange-500 px-3 py-1 rounded">Logout</button>
       </div>
     </header>
   );

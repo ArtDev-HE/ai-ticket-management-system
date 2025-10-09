@@ -4,7 +4,8 @@ import HeaderBar from "@/components/HeaderBar";
 import InteractionLog from "@/components/InteractionLog";
 import EmployeeInfoPanel from "@/components/EmployeeInfoPanel";
 import ChatInput from "@/components/ChatInput";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useUser } from '@/context/UserContext';
 import type { AiResponse } from '@/services/ai';
 
 interface ChatMessage {
@@ -18,30 +19,34 @@ export default function Home() {
   const [aiOutput, setAiOutput] = useState<AiResponse | string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
 
-  // localStorage key and limits
-  const STORAGE_KEY = 'ai_chat_messages';
+  // storage key and limits — namespace per authenticated employee so chat follows login
+  const { currentEmployeeId } = useUser();
+  const STORAGE_KEY_BASE = 'ai_chat_messages';
+  const STORAGE_KEY = currentEmployeeId ? `${STORAGE_KEY_BASE}:${currentEmployeeId}` : STORAGE_KEY_BASE;
   const MAX_MESSAGES = 500; // cap to avoid unbounded growth
 
-  // Load persisted messages on mount
+  // Load persisted messages on mount and when authenticated employee changes
   useEffect(() => {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
+      const storage = (typeof window !== 'undefined' && sessionStorage) ? sessionStorage : localStorage;
+      const raw = storage.getItem(STORAGE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw) as ChatMessage[];
         if (Array.isArray(parsed)) setMessages(parsed.slice(-MAX_MESSAGES));
       }
     } catch (err) {
-      console.warn('Failed to load messages from localStorage', err);
+      console.warn('Failed to load messages from storage', err);
     }
-  }, []);
+  }, [STORAGE_KEY]);
 
   // Persist messages whenever they change
   useEffect(() => {
     try {
       const trimmed = messages.slice(-MAX_MESSAGES);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmed));
+      const storage = (typeof window !== 'undefined' && sessionStorage) ? sessionStorage : localStorage;
+      storage.setItem(STORAGE_KEY, JSON.stringify(trimmed));
     } catch (err) {
-      console.warn('Failed to save messages to localStorage', err);
+      console.warn('Failed to save messages to storage', err);
     }
   }, [messages]);
 
@@ -95,12 +100,84 @@ export default function Home() {
     URL.revokeObjectURL(url);
   };
 
+  const handleExport = useCallback(async () => {
+    // Signed export: ask server to sign the export payload
+    try {
+      const payload = {
+        employeeId: currentEmployeeId,
+        exportedAt: new Date().toISOString(),
+        messages,
+      };
+      const token = sessionStorage.getItem('auth_token');
+      const res = await fetch('/api/chat/export', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error(`Export failed ${res.status}`);
+      const body = await res.json();
+      const signed = { ...payload, signature: body.signature, md: messages.map(m => `${m.sender}: ${m.text}`).join('\n') };
+      const blob = new Blob([JSON.stringify(signed, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `chat_export_${currentEmployeeId || 'anon'}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Export error', err);
+      alert('Export failed: ' + (err as Error).message);
+    }
+  }, [messages, currentEmployeeId]);
+
+  const handleImportFile = useCallback(async (file: File) => {
+    try {
+      const raw = await file.text();
+      const parsed = JSON.parse(raw);
+      // Basic validation
+      if (!parsed || !parsed.signature || !parsed.messages) {
+        alert('Invalid import file: missing signature or messages');
+        return;
+      }
+      const token = sessionStorage.getItem('auth_token');
+      const res = await fetch('/api/chat/import', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: raw,
+      });
+      if (!res.ok) {
+        const txt = await res.text();
+        throw new Error(`Import failed ${res.status}: ${txt}`);
+      }
+      const body = await res.json();
+      // body.messages should be the validated messages
+      if (Array.isArray(body.messages)) {
+        // merge: append imported messages to existing
+        setMessages(prev => {
+          const merged = [...prev, ...body.messages];
+          const key = `ai_chat_messages:${currentEmployeeId}`;
+          try { sessionStorage.setItem(key, JSON.stringify(merged)); } catch (e) { }
+          return merged;
+        });
+      }
+      alert('Import successful');
+    } catch (err) {
+      console.error('Import error', err);
+      alert('Import failed: ' + (err as Error).message);
+    }
+  }, [currentEmployeeId]);
   return (
     <div className="flex flex-col h-screen bg-gray-100">
       <HeaderBar />
 
       <main className="flex flex-1 overflow-hidden">
-        <InteractionLog aiOutput={aiOutput} messages={messages} onClear={clearMessages} onExport={exportMessagesAsMd} />
+        <InteractionLog aiOutput={aiOutput} messages={messages} onClear={clearMessages} onExport={handleExport} onImport={handleImportFile} />
         <EmployeeInfoPanel />
       </main>
 

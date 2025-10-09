@@ -2,13 +2,13 @@
 // This script should be run from the frontend folder (dev only).
 
 if (process.env.NODE_ENV === 'production') {
-  console.error('Refusing to run smoke tests in production.');
-  process.exit(1);
+    console.error('Refusing to run smoke tests in production.');
+    process.exit(1);
 }
 if (process.env.ALLOW_DEV_TESTS !== 'true') {
-  console.error('To run smoke tests, set ALLOW_DEV_TESTS=true. Example (PowerShell):');
-  console.error("$Env:ALLOW_DEV_TESTS='true'; node devops/smokeTests_frontend.js");
-  process.exit(1);
+    console.error('To run smoke tests, set ALLOW_DEV_TESTS=true. Example (PowerShell):');
+    console.error("$Env:ALLOW_DEV_TESTS='true'; node devops/smokeTests_frontend.js");
+    process.exit(1);
 }
 
 const axios = require('axios');

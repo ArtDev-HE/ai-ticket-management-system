@@ -1,5 +1,6 @@
 import axios from "axios";
 import { API_BASE } from '../config';
+import auth from './auth';
 
 const api = axios.create({
   baseURL: API_BASE,
@@ -10,8 +11,7 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     try {
-      // In Next.js/browser env, token could be stored in localStorage
-      const token = (typeof window !== 'undefined') ? localStorage.getItem('token') : null;
+      const token = auth.getToken();
       if (token && config && config.headers) {
         config.headers.Authorization = `Bearer ${token}`;
       }

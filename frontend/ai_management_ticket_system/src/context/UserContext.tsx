@@ -15,14 +15,26 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     const [currentEmployeeId, setCurrentEmployeeIdState] = useState<string | null>(null);
 
     useEffect(() => {
-        const stored = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY) : null;
+        const stored = typeof window !== 'undefined' ? sessionStorage.getItem(STORAGE_KEY) : null;
         if (stored) setCurrentEmployeeIdState(stored);
+
+        // Clear session on tab/window close to force login next open
+        const handleBeforeUnload = () => {
+            try {
+                sessionStorage.removeItem('auth_token');
+                sessionStorage.removeItem(STORAGE_KEY);
+            } catch (e) { /* ignore */ }
+        };
+        if (typeof window !== 'undefined') window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => {
+            if (typeof window !== 'undefined') window.removeEventListener('beforeunload', handleBeforeUnload);
+        };
     }, []);
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
-            if (currentEmployeeId) localStorage.setItem(STORAGE_KEY, currentEmployeeId);
-            else localStorage.removeItem(STORAGE_KEY);
+            if (currentEmployeeId) sessionStorage.setItem(STORAGE_KEY, currentEmployeeId);
+            else sessionStorage.removeItem(STORAGE_KEY);
         }
     }, [currentEmployeeId]);
 

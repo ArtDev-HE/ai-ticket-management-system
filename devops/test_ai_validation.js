@@ -2,13 +2,13 @@
 // This script is for local testing and will refuse to run in production unless ALLOW_DEV_TESTS=true
 
 if (process.env.NODE_ENV === 'production') {
-  console.error('Refusing to run dev test in production.');
-  process.exit(1);
+    console.error('Refusing to run dev test in production.');
+    process.exit(1);
 }
 if (process.env.ALLOW_DEV_TESTS !== 'true') {
-  console.error('To run this validation test, set ALLOW_DEV_TESTS=true in your environment. Example (PowerShell):');
-  console.error("$Env:ALLOW_DEV_TESTS='true'; node devops/test_ai_validation.js");
-  process.exit(1);
+    console.error('To run this validation test, set ALLOW_DEV_TESTS=true in your environment. Example (PowerShell):');
+    console.error("$Env:ALLOW_DEV_TESTS='true'; node devops/test_ai_validation.js");
+    process.exit(1);
 }
 
 const fetch = require('node-fetch');

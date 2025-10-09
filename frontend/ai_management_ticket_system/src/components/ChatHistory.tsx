@@ -12,10 +12,12 @@ export default function ChatHistory({
   messages = [],
   onClear,
   onExport,
+  onImport,
 }: {
   messages?: ChatMessage[];
   onClear?: () => void;
   onExport?: () => void;
+  onImport?: (file: File) => void;
 }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
 
@@ -35,9 +37,19 @@ export default function ChatHistory({
       {/* Header stays fixed */}
       <div className="p-4 flex items-center justify-between border-b bg-gray-50 flex-none">
         <h2 className="text-lg font-semibold">Chat History</h2>
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
           {onExport && (
             <button onClick={onExport} className="text-sm px-2 py-1 bg-white border rounded">Export MD</button>
+          )}
+          {onImport && (
+            <label className="text-sm px-2 py-1 bg-white border rounded cursor-pointer">
+              Import
+              <input type="file" accept="application/json" style={{ display: 'none' }} onChange={(e) => {
+                const f = e.target.files && e.target.files[0];
+                if (f) onImport(f);
+                e.currentTarget.value = '';
+              }} />
+            </label>
           )}
           {onClear && (
             <button onClick={onClear} className="text-sm px-2 py-1 bg-red-50 border border-red-200 text-red-600 rounded">Clear</button>
