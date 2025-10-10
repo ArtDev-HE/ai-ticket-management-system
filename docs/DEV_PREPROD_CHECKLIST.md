@@ -194,6 +194,11 @@ Last updated: 2025-10-09
 - Fixed a parse error in a frontend smoke test script and re-ran the smoke tests against the local backend; smoke tests completed successfully and backend `/health` returned OK.
 - Committed the type/lint fixes and documentation updates to `main` (chore: lint/type fixes and run frontend smoke tests).
 
+### Verification — 2025-10-10
+- UI verified in-browser by developer: main page loads and core chat/analytics flows render as expected.
+- Dev smoke tests executed against local backend (ALLOW_DEV_TESTS=true): reported success and backend health OK.
+- All recent changes committed and pushed to `main`.
+
 # DEV / Pre-production Cleanup Checklist
 
 This file captures temporary, dev-only, or test-only artifacts that were introduced during development. It lists each temporary item, where it lives, why it's temporary, and suggested remediation. Use this as the authoritative pre-prod cleanup checklist before any production release.

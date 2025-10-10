@@ -178,3 +178,7 @@ npm run test:ai-validation
 - Performed a focused TypeScript and ESLint pass across the frontend. Resolved several `any` usages, added runtime guards for AI-derived payloads, and reduced ESLint errors to warnings only.
 - Fixed the frontend smoke test script parse error, ran smoke tests against a running local backend, and confirmed `/health` returned OK. Changes were committed to `main` with message: "chore: lint/type fixes and run frontend smoke tests".
 
+### Verification — 2025-10-10
+- UI verified in-browser by developer; core pages and chat/visualization flows render correctly.
+- Dev smoke tests passed against the running backend. All changes were committed and pushed.
+
