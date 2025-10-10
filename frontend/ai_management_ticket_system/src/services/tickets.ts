@@ -107,7 +107,7 @@ export const updateTicketState = async (
   data: Record<string, unknown> = {}
 ): Promise<TicketResponse> => {
   // backend endpoint is /api/tickets/:id/estado
-  const res = await api.patch<TicketResponse>(`/api/tickets/${id}/estado`, { estado: newState });
+  const res = await api.patch<TicketResponse>(`/api/tickets/${id}/estado`, { estado: newState, ...data });
   return res.data as TicketResponse;
 };
 // ===== Specific actions =====

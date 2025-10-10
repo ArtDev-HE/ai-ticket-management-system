@@ -31,7 +31,7 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
             }
 
             if (!token) {
-                try { auth.logout(); } catch (e) { /* ignore */ }
+                try { auth.logout(); } catch { /* ignore */ }
                 const returnTo = typeof window !== 'undefined' ? window.location.pathname : '/';
                 if (mounted) router.replace(`/login?returnTo=${encodeURIComponent(returnTo)}`);
                 return;

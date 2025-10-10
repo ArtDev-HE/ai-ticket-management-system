@@ -126,7 +126,8 @@ export const generateVisualizationDescriptor = async (prompt: string): Promise<A
     };
 };
 
-export default { generateAnswer };
+const aiService = { generateAnswer };
+export default aiService;
 
 // Backend query helper — calls /api/ai/query on the server
 export const queryAiBackend = async (prompt: string) => {

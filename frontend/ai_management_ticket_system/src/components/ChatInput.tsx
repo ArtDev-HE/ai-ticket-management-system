@@ -1,14 +1,11 @@
 import { useState } from 'react';
-import { generateVisualizationDescriptor, AiResponse, getAiDescriptor } from '@/services/ai';
+import { AiResponse, getAiDescriptor } from '@/services/ai';
 import { getEmployeeAnalytics } from '@/services/analytics';
 import { getProcedureAnalytics } from '@/services/analytics';
 import { getDepartmentAnalytics } from '@/services/analytics';
 import type { EmployeeAnalytics } from '@/types/analytics';
 
-// Simple command parsing helpers
-const regexes = {
-  employeeId: /(EMP-[A-Za-z0-9_-]+)/i,
-};
+// Simple command parsing helpers (regex constants removed; inline matches are used)
 
 export default function ChatInput({ onSend, onUserSend }: { onSend?: (resp: AiResponse, isCommand?: boolean) => void; onUserSend?: (text: string) => void }) {
   const [value, setValue] = useState('');
@@ -101,7 +98,7 @@ export default function ChatInput({ onSend, onUserSend }: { onSend?: (resp: AiRe
           };
           onSend?.(resp, true);
           return;
-        } catch (_err) {
+        } catch {
           onSend?.({ text: `Error: employee ${empId} not found or analytics unavailable.` });
           return;
         }
@@ -128,7 +125,7 @@ export default function ChatInput({ onSend, onUserSend }: { onSend?: (resp: AiRe
           };
           onSend?.(resp, true);
           return;
-        } catch (_err) {
+        } catch {
           onSend?.({ text: `Error: employee ${empId} not found or analytics unavailable.` });
           return;
         }
@@ -155,7 +152,7 @@ export default function ChatInput({ onSend, onUserSend }: { onSend?: (resp: AiRe
           };
           onSend?.(resp, true);
           return;
-        } catch (_err) {
+        } catch {
           onSend?.({ text: `Error: procedure ${proc} not found or analytics unavailable.` });
           return;
         }
@@ -176,7 +173,7 @@ export default function ChatInput({ onSend, onUserSend }: { onSend?: (resp: AiRe
           };
           onSend?.(resp, true);
           return;
-        } catch (_err) {
+        } catch {
           onSend?.({ text: `Error: department ${dep} not found or analytics unavailable.` });
           return;
         }

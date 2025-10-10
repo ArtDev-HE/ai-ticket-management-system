@@ -9,7 +9,6 @@ import {
   updateTicket,
   deleteTicket,
   getTicketsByEmployee,
-  getTicketsByFilter,
   getTicketStats,
   updateTicketState,
 } from "@/services/tickets";

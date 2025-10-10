@@ -5,7 +5,6 @@ import {
   UpdateProcedureRequest,
   ProcedureFilters,
   ProcedureListResponse,
-  ProcedureResponse,
 } from "@/types/procedures";
 
 /**

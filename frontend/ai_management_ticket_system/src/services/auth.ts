@@ -46,4 +46,5 @@ export const getMe = async () => {
     }
 };
 
-export default { setToken, getToken, login, logout, getMe };
+const authService = { setToken, getToken, login, logout, getMe };
+export default authService;

@@ -4,7 +4,7 @@ import HeaderBar from "@/components/HeaderBar";
 import InteractionLog from "@/components/InteractionLog";
 import EmployeeInfoPanel from "@/components/EmployeeInfoPanel";
 import ChatInput from "@/components/ChatInput";
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useUser } from '@/context/UserContext';
 import type { AiResponse } from '@/services/ai';
 
@@ -25,7 +25,7 @@ export default function Home() {
   // storage key and limits — namespace per authenticated employee so chat follows login
   const { currentEmployeeId } = useUser();
   const STORAGE_KEY_BASE = 'ai_chat_messages';
-  const STORAGE_KEY = currentEmployeeId ? `${STORAGE_KEY_BASE}:${currentEmployeeId}` : STORAGE_KEY_BASE;
+  const STORAGE_KEY = useMemo(() => (currentEmployeeId ? `${STORAGE_KEY_BASE}:${currentEmployeeId}` : STORAGE_KEY_BASE), [currentEmployeeId]);
   const MAX_MESSAGES = 500; // cap to avoid unbounded growth
 
   // Load persisted messages on mount and when authenticated employee changes
@@ -51,15 +51,13 @@ export default function Home() {
     } catch (err) {
       console.warn('Failed to save messages to storage', err);
     }
-  }, [messages]);
+  }, [messages, STORAGE_KEY]);
 
   const pushUserMessage = (text: string) => {
     setMessages((m) => [...m, { sender: 'user', text, createdAt: new Date().toISOString() }]);
   };
 
-  const pushAiMessage = (text: string) => {
-    setMessages((m) => [...m, { sender: 'ai', text, createdAt: new Date().toISOString() }]);
-  };
+  // (removed unused pushAiMessage helper)
 
   const pushPendingAi = () => {
     // add a pending AI placeholder so UI shows "AI is thinking..."
@@ -109,7 +107,7 @@ export default function Home() {
           const signed = { ...payload, signature: body.signature };
           header = `<!--CHAT_EXPORT_JSON_START\n${JSON.stringify(signed)}\nCHAT_EXPORT_JSON_END-->\n\n`;
         }
-      } catch (e) {
+      } catch {
         // ignore signature errors — fallback to plain MD
       }
 
@@ -125,38 +123,7 @@ export default function Home() {
     })();
   };
 
-  const handleExport = useCallback(async () => {
-    // Signed export: ask server to sign the export payload
-    try {
-      const payload = {
-        employeeId: currentEmployeeId,
-        exportedAt: new Date().toISOString(),
-        messages,
-      };
-      const token = sessionStorage.getItem('auth_token');
-      const res = await fetch(`${BACKEND_BASE}/api/chat/export`, {
-        method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) throw new Error(`Export failed ${res.status}`);
-      const body = await res.json();
-      const signed = { ...payload, signature: body.signature, md: messages.map(m => `${m.sender}: ${m.text}`).join('\n') };
-      const blob = new Blob([JSON.stringify(signed, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `chat_export_${currentEmployeeId || 'anon'}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch (err) {
-      console.error('Export error', err);
-      alert('Export failed: ' + (err as Error).message);
-    }
-  }, [messages, currentEmployeeId]);
+  // (removed unused handleExport; exportMessagesAsMd is used by the UI)
 
   const handleImportFile = useCallback(async (file: File) => {
     try {
@@ -199,14 +166,14 @@ export default function Home() {
         setMessages(prev => {
           const merged = [...prev, ...body.messages];
           const key = `ai_chat_messages:${currentEmployeeId}`;
-          try { sessionStorage.setItem(key, JSON.stringify(merged)); } catch (e) { }
+          try { sessionStorage.setItem(key, JSON.stringify(merged)); } catch { }
           return merged;
         });
       }
       alert('Import successful');
-    } catch (err) {
-      console.error('Import error', err);
-      alert('Import failed: ' + (err as Error).message);
+    } catch {
+      console.error('Import error');
+      alert('Import failed');
     }
   }, [currentEmployeeId]);
   return (

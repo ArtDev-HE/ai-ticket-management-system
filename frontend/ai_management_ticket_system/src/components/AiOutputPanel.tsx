@@ -34,12 +34,12 @@ export default function AiOutputPanel({
               let data: unknown = rawData;
               if (Array.isArray(rawData)) {
                 data = (rawData as Array<Record<string, unknown>>).map((item) => {
-                  const { title, label, ...rest } = item || {} as Record<string, unknown>;
-                  return rest;
+                  const entries = Object.entries(item || {}).filter(([k]) => k !== 'title' && k !== 'label');
+                  return Object.fromEntries(entries) as Record<string, unknown>;
                 });
               } else if (rawData && typeof rawData === 'object') {
-                const { title, label, ...rest } = rawData as Record<string, unknown>;
-                data = rest;
+                const entries = Object.entries(rawData as Record<string, unknown>).filter(([k]) => k !== 'title' && k !== 'label');
+                data = Object.fromEntries(entries) as Record<string, unknown>;
               }
               // Normalization for trendline_efficiency: accept {date,value} shape
               if (key === 'trendline_efficiency' && Array.isArray(data)) {
@@ -68,9 +68,8 @@ export default function AiOutputPanel({
                   });
                 }
               }
-              console.log('[AiOutputPanel] descriptor', descriptor);
+              // Keep minimal logging for dev; avoid unused variable lint warnings
               const validation = validateVisualizationData(key, data);
-              console.log('[AiOutputPanel] validation', validation);
               if (!validation.valid) {
                 return (
                   <div className="p-4 bg-yellow-50 border border-yellow-200 rounded">
