@@ -11,6 +11,10 @@ This changelog tracks documentation updates, reviewer initials, and brief notes.
   - Added Risk Assessment table, clarified CHAT_EXPORT_SECRET fallback and production requirement.
 - Complete Reference (Updated) — v1.1 — Last reviewed by JS
   - Added ADR section for sessionStorage dev tokens and synchronized notes on export/import signing and session semantics.
+ - 2025-10-10 session updates
+   - Performed a frontend TypeScript/ESLint pass to remove explicit `any` usages and add runtime guards for AI/visualization payloads.
+   - Fixed a parse error in the frontend smoke test harness and executed the smoke tests against a running backend; the smoke tests completed successfully and backend `/health` returned OK.
+   - Committed the code and documentation changes to `main` with message: "chore: lint/type fixes and run frontend smoke tests".
 
 
 ## Previous

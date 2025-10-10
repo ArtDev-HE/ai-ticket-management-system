@@ -174,3 +174,7 @@ cd C:\Users\Usuario\ticket-system-backend
 npm run test:ai-validation
 ```
 
+## 2025-10-10 - Developer session update
+- Performed a focused TypeScript and ESLint pass across the frontend. Resolved several `any` usages, added runtime guards for AI-derived payloads, and reduced ESLint errors to warnings only.
+- Fixed the frontend smoke test script parse error, ran smoke tests against a running local backend, and confirmed `/health` returned OK. Changes were committed to `main` with message: "chore: lint/type fixes and run frontend smoke tests".
+

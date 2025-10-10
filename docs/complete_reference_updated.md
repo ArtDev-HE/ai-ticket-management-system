@@ -171,6 +171,10 @@ Small notes
 - TypeScript checks: `npx -y tsc --noEmit` executed in the frontend workspace; last run exit code 0 (no blocking type errors).
 - Smoke script: Updated to handle missing `PROC-001`; user-run smoke tests completed successfully (health OK, ticket lifecycle outputs, analytics keys present).
 
+### 2025-10-10 - Developer session update
+- Completed an additional lint/type pass across the frontend to remove explicit `any` uses and add runtime guards. This improved static checks and prevented several potential runtime shape mismatches coming from AI descriptors.
+- Fixed a parse error in the smoke test harness and ran the dev smoke test against the running backend; the smoke tests completed successfully. Changes were committed to `main` with message: "chore: lint/type fixes and run frontend smoke tests".
+
 
 ## Known issues / Deferred work
 
