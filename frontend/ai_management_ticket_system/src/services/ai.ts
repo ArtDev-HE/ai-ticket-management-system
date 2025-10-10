@@ -5,12 +5,12 @@
 
 export type AiResponse = {
     text: string;
-    analytics?: any;
+    analytics?: Record<string, unknown>;
     // Optional visualization descriptor for deterministic charts
     visualization?: {
         key: string; // visualization key from VisualizationRegistry
-        parameters?: Record<string, any>;
-        data?: any; // optional inline data
+        parameters?: Record<string, unknown>;
+        data?: unknown; // optional inline data
         dataUrl?: string; // optional backend endpoint to fetch data from
     };
 };
@@ -28,7 +28,7 @@ export const generateAnswer = async (prompt: string): Promise<AiResponse> => {
     // Simple mock response based on prompt keywords
     const text = `AI summary for: "${prompt.slice(0, 120)}"\n\n- Suggested action: review KPIs\n- Confidence: 72%`;
 
-    const analytics = {
+    const analytics: Record<string, unknown> = {
         performance: {
             total_tickets: 42,
             completados: 26,
@@ -64,10 +64,14 @@ export const generateVisualizationDescriptor = async (prompt: string): Promise<A
     // Naive mapping: if prompt mentions 'trend' or 'efficiency' and user shows intent, return trendline descriptor
     if (hasIntent && /trend|efficien|efficiency|eficien/gi.test(prompt)) {
         // Transform efficiency_trend -> required fields: fecha_actualizado, eficiencia_temporal (0-1)
-        const transformed = (base.analytics.efficiency_trend || []).map((p: any) => ({
-            fecha_actualizado: p.date,
-            eficiencia_temporal: typeof p.eficiencia === 'number' ? (p.eficiencia / 100) : null,
-        }));
+        const trendRaw = (base.analytics && (base.analytics as unknown as Record<string, unknown>).efficiency_trend) || [];
+        const transformed = Array.isArray(trendRaw) ? trendRaw.map((p: unknown) => {
+            const rec = p as Record<string, unknown>;
+            const fecha = (rec.date as string) || (rec.fecha_actualizado as string) || '';
+            const ef = rec.eficiencia ?? rec.eficiencia_temporal ?? rec.value ?? null;
+            const eficiencia_temporal = typeof ef === 'number' ? (ef as number) / 100 : null;
+            return { fecha_actualizado: fecha, eficiencia_temporal };
+        }) : [];
 
         return {
             text: base.text,
@@ -87,7 +91,7 @@ export const generateVisualizationDescriptor = async (prompt: string): Promise<A
             visualization: {
                 key: 'barchart_ticket_distribution',
                 parameters: {},
-                data: base.analytics.tickets_by_estado,
+                data: (base.analytics && (base.analytics as unknown as Record<string, unknown>).tickets_by_estado) || [],
             },
         };
     }
@@ -106,11 +110,18 @@ export const generateVisualizationDescriptor = async (prompt: string): Promise<A
         visualization: {
             key: 'kpireport_summary',
             parameters: {},
-            data: {
-                ...base.analytics.performance,
-                // add completion_rate as string percentage
-                completion_rate: ((base.analytics.performance.completados || 0) / (base.analytics.performance.total_tickets || 1) * 100).toFixed(2) + '%',
-            },
+            data: (() => {
+                const perf = base.analytics && (base.analytics as unknown as Record<string, unknown>).performance as Record<string, unknown> | undefined;
+                const completadosRaw = perf?.completados;
+                const totalRaw = perf?.total_tickets;
+                const completados = typeof completadosRaw === 'number' ? completadosRaw : (typeof completadosRaw === 'string' ? Number(completadosRaw) : 0);
+                const total = typeof totalRaw === 'number' ? totalRaw : (typeof totalRaw === 'string' ? Number(totalRaw) : 1);
+                const completion_rate = ((total && !Number.isNaN(total)) ? ((completados / total) * 100) : 0).toFixed(2) + '%';
+                return {
+                    ...(perf ?? {}),
+                    completion_rate,
+                } as Record<string, unknown>;
+            })(),
         },
     };
 };

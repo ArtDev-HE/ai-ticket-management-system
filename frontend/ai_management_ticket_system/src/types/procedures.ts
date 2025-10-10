@@ -17,10 +17,10 @@ export interface Procedure {
   categoria?: string;
   departamento_id?: string;
   activo: boolean;
-  recursos?: Record<string, any>;
-  kpis?: Record<string, any>;
-  responsabilidades?: Record<string, any>;
-  validaciones?: Record<string, any>;
+  recursos?: Record<string, unknown>;
+  kpis?: Record<string, unknown>;
+  responsabilidades?: Record<string, unknown>;
+  validaciones?: Record<string, unknown>;
   created_at?: string;
   updated_at?: string;
 }
@@ -37,10 +37,10 @@ export interface CreateProcedureRequest {
   categoria?: string;
   departamento_id?: string;
   activo?: boolean;
-  recursos?: Record<string, any>;
-  kpis?: Record<string, any>;
-  responsabilidades?: Record<string, any>;
-  validaciones?: Record<string, any>;
+  recursos?: Record<string, unknown>;
+  kpis?: Record<string, unknown>;
+  responsabilidades?: Record<string, unknown>;
+  validaciones?: Record<string, unknown>;
 }
 
 /** 🔄 Used for updating an existing procedure */
@@ -52,10 +52,10 @@ export interface UpdateProcedureRequest {
   complejidad?: "BAJA" | "MEDIA" | "ALTA";
   categoria?: string;
   activo?: boolean;
-  recursos?: Record<string, any>;
-  kpis?: Record<string, any>;
-  responsabilidades?: Record<string, any>;
-  validaciones?: Record<string, any>;
+  recursos?: Record<string, unknown>;
+  kpis?: Record<string, unknown>;
+  responsabilidades?: Record<string, unknown>;
+  validaciones?: Record<string, unknown>;
 }
 
 /** 🔍 Filters for listing procedures */

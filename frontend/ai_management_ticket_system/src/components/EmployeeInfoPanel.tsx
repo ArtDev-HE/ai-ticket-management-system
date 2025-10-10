@@ -4,6 +4,7 @@ import { useTicketsByEmployee } from "@/hooks/useTickets";
 import { useUser } from '@/context/UserContext';
 import TicketCard from "./TicketCard";
 import EmployeeStats from "./EmployeeStats";
+import type { Ticket } from '@/types/tickets';
 
 export default function EmployeeInfoPanel() {
   // TODO: Replace with session/user context later (use JWT). For now use UserContext
@@ -35,7 +36,7 @@ export default function EmployeeInfoPanel() {
         </h2>
         {tickets?.data?.length ? (
           <div className="flex flex-col space-y-3 overflow-y-auto max-h-[50vh] pr-2">
-            {tickets.data.map((ticket: any) => (
+            {tickets.data.map((ticket: Ticket) => (
               <TicketCard key={ticket.id} ticket={ticket} />
             ))}
           </div>

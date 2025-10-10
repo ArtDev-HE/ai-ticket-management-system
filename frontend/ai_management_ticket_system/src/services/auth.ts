@@ -35,11 +35,15 @@ export const logout = () => setToken(null);
 
 export const getMe = async () => {
     const token = getToken();
-    const headers: any = { 'Content-Type': 'application/json' };
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
     if (token) headers['Authorization'] = `Bearer ${token}`;
     const res = await fetch(`${BACKEND_BASE}/api/auth/me`, { headers });
     if (!res.ok) return null;
-    return res.json();
+    try {
+        return await res.json();
+    } catch {
+        return null;
+    }
 };
 
 export default { setToken, getToken, login, logout, getMe };

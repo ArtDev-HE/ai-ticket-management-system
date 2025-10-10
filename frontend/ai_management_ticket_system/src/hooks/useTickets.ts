@@ -31,7 +31,7 @@ import {
  * Mirrors the backend tickets.js endpoints.
  */
 
-export const useTickets = (filters: Record<string, any> = {}) => {
+export const useTickets = (filters: Record<string, unknown> = {}) => {
   const queryClient = useQueryClient();
 
   // ─── GET all tickets ───────────────────────────────────────────────
@@ -55,29 +55,36 @@ export const useTickets = (filters: Record<string, any> = {}) => {
 
   // ─── UPDATE an existing ticket ─────────────────────────────────────
   const updateMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Record<string, any> }) => {
+    mutationFn: async ({ id, data }: { id: string; data: Record<string, unknown> }) => {
       // Route to specific endpoints based on payload shape
-      if (data?.empleado_id && data?.action === 'accept') {
-        return acceptTicket(id, data.empleado_id);
-      }
-      if (data?.porcentaje !== undefined && data?.completado !== undefined) {
-        return updateHito(id, data.porcentaje, data.completado);
-      }
-      if (data?.accion && (data.accion === 'aprobar' || data.accion === 'rechazar' || data.accion === 'reasignar')) {
-        return reviewTicket(id, data);
-      }
-      if (data?.kpis_especificos) {
-        return submitKpis(id, data.kpis_especificos);
-      }
-      if (data?.pause) {
-        return pauseTicket(id, data.pause);
-      }
-      if (data?.resume) {
-        return resumeTicket(id, data.resume);
-      }
-      if (data?.requestReassignment) {
-        const { empleado_id, razon } = data.requestReassignment;
-        return requestReassignment(id, empleado_id, razon);
+      if (data && typeof data === 'object') {
+        const d = data as Record<string, unknown>;
+        if ('empleado_id' in d && d.empleado_id && d.action === 'accept') {
+          return acceptTicket(id, String(d.empleado_id));
+        }
+        if ('porcentaje' in d && 'completado' in d) {
+          const pct = Number(d.porcentaje as unknown);
+          const comp = Boolean(d.completado as unknown);
+          return updateHito(id, pct, comp);
+        }
+        if ('accion' in d && (d.accion === 'aprobar' || d.accion === 'rechazar' || d.accion === 'reasignar')) {
+          return reviewTicket(id, d as unknown as Record<string, unknown>);
+        }
+        if ('kpis_especificos' in d) {
+          return submitKpis(id, d.kpis_especificos as unknown as Record<string, unknown>);
+        }
+        if ('pause' in d) {
+          return pauseTicket(id, d.pause as unknown as Record<string, unknown>);
+        }
+        if ('resume' in d) {
+          return resumeTicket(id, d.resume as unknown as Record<string, unknown>);
+        }
+        if ('requestReassignment' in d) {
+          const rr = d.requestReassignment as Record<string, unknown> | undefined;
+          if (rr && 'empleado_id' in rr && 'razon' in rr) {
+            return requestReassignment(id, String(rr.empleado_id), String(rr.razon));
+          }
+        }
       }
 
       // Fallback: allow setting estado via updateTicket helper
@@ -101,7 +108,7 @@ export const useTickets = (filters: Record<string, any> = {}) => {
     }: {
       id: string;
       newState: string;
-      data?: Record<string, any>;
+      data?: Record<string, unknown>;
     }) => updateTicketState(id, newState, data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["tickets"] }),
   });
@@ -144,7 +151,7 @@ export const useTicketsByEmployee = (employeeId?: string) => {
  * 📊 useTicketStats - Dashboard overview
  */
 export const useTicketStats = () => {
-  return useQuery<any>({
+  return useQuery<Record<string, number>>({
     queryKey: ["tickets", "stats"],
     queryFn: getTicketStats,
   });

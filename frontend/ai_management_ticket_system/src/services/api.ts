@@ -1,6 +1,7 @@
 import axios from "axios";
 import { API_BASE } from '../config';
 import auth from './auth';
+import type { CreateTicketRequest, TicketListResponse, TicketResponse } from '../types/tickets';
 
 const api = axios.create({
   baseURL: API_BASE,
@@ -15,7 +16,7 @@ api.interceptors.request.use(
       if (token && config && config.headers) {
         config.headers.Authorization = `Bearer ${token}`;
       }
-    } catch (e) {
+    } catch (_e) {
       // ignore (server-side or access issues)
     }
     return config;
@@ -27,28 +28,32 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Normalize error
-    const err = error;
-    if (err.response && err.response.data) {
-      return Promise.reject(err.response.data);
+    // Normalize error without using `any`
+    const err = error as unknown;
+    if (typeof err === 'object' && err !== null) {
+      const e = err as { response?: { data?: unknown }; message?: string };
+      if (e.response && e.response.data) {
+        return Promise.reject(e.response.data);
+      }
+      return Promise.reject({ message: e.message ?? 'Network Error' });
     }
-    return Promise.reject({ message: err.message || 'Network Error' });
+    return Promise.reject({ message: 'Network Error' });
   }
 );
 
 // ========== Basic Operations ==========
-export const getAllTickets = async (filters = {}) => {
-  const res = await api.get("/api/tickets", { params: filters });
+export const getAllTickets = async (filters: Record<string, unknown> = {}) => {
+  const res = await api.get<TicketListResponse>("/api/tickets", { params: filters });
   return res.data;
 };
 
 export const getTicketById = async (id: string) => {
-  const res = await api.get(`/api/tickets/${id}`);
+  const res = await api.get<TicketResponse>(`/api/tickets/${id}`);
   return res.data;
 };
 
-export const createTicket = async (data: any) => {
-  const res = await api.post(`/api/tickets`, data);
+export const createTicket = async (data: CreateTicketRequest) => {
+  const res = await api.post<TicketResponse>(`/api/tickets`, data);
   return res.data;
 };
 
@@ -74,24 +79,24 @@ export const requestReassignment = async (id: string, empleado_id: string, razon
   return res.data;
 };
 
-export const reviewTicket = async (id: string, data: any) => {
+export const reviewTicket = async (id: string, data: Record<string, unknown>) => {
   const res = await api.post(`/api/tickets/${id}/review`, data);
   return res.data;
 };
 
 // ========== KPIs ==========
-export const submitKpis = async (id: string, kpis_especificos: any) => {
+export const submitKpis = async (id: string, kpis_especificos: Record<string, unknown>) => {
   const res = await api.post(`/api/tickets/${id}/kpis`, { kpis_especificos });
   return res.data;
 };
 
 // ========== Pause / Resume ==========
-export const pauseTicket = async (id: string, data: any) => {
+export const pauseTicket = async (id: string, data: Record<string, unknown>) => {
   const res = await api.patch(`/api/tickets/${id}/pause`, data);
   return res.data;
 };
 
-export const resumeTicket = async (id: string, data: any) => {
+export const resumeTicket = async (id: string, data: Record<string, unknown>) => {
   const res = await api.patch(`/api/tickets/${id}/resume`, data);
   return res.data;
 };

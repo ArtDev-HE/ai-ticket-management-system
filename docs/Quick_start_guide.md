@@ -1,8 +1,20 @@
-# Quick Start Guide
+# Quick Start Guide — v1.1
+
+This short guide helps a developer get the project running locally and continue work in the next session. Commands are PowerShell-friendly (Windows).
+## Local developer flows
+
+- Dev login: POST `/api/auth/dev-login` (used by `frontend/src/services/auth.ts`) returns a static dev token used during local development.
+ - Change dev `currentEmployeeId` quickly: use the input control in the HeaderBar; it updates `UserContext` and `EmployeeInfoPanel` immediately.
+ - Chat history persistence: stored in `sessionStorage` key `ai_chat_messages:${employeeId}` and capped at 500 messages. Exported MD files embed a signed JSON payload that can be re-imported via the UI.
+ - Dev login: POST `/api/auth/dev-login` (used by `frontend/src/services/auth.ts`) returns a static dev token used during local development. Note: we now persist the token and `currentEmployeeId` in sessionStorage by default in recent dev changes (session lifetime tied to the browser tab). For production, migrate to HttpOnly cookies.
+ - Change dev `currentEmployeeId` quickly: use the input control in the HeaderBar; it updates `UserContext` and `EmployeeInfoPanel` immediately.
+ - Chat history persistence: stored in `sessionStorage` namespaced per employee under keys like `ai_chat_messages:${employeeId}` and capped at 500 messages. Exported MD files embed a signed JSON payload that can be re-imported via the UI.
+# Quick Start Guide — v1.1
 
 This short guide helps a developer get the project running locally and continue work in the next session. Commands are PowerShell-friendly (Windows).
 
 Last updated: 2025-10-08
+Last reviewed by: JS (2025-10-10)
 
 ## Prerequisites
 
@@ -36,13 +48,15 @@ npm install
 
 ```
 DB_USER=your_db_user
-## Ports
-
-- Backend: 3000
-- Frontend (Next.js): 3001 (recommended)
+DB_PASSWORD=your_db_password
+DB_HOST=your_db_host
 DB_NAME=ticket_management_system
 PORT=3000
-5. Ensure Postgres is reachable. For Supabase, use the connection string and set `ssl: { rejectUnauthorized: false }` in `src/config/db.js`.
+JWT_SECRET=your_jwt_secret_here
+CHAT_EXPORT_SECRET=your_chat_export_secret_here
+# Frontend env (set this in frontend/.env.local or process environment for dev)
+NEXT_PUBLIC_API_URL=http://localhost:3000
+```
 
 5. Ensure Postgres is reachable. For Supabase, use the connection string and set `ssl: { rejectUnauthorized: false }` in `src/config/db.js`.
 
@@ -99,12 +113,34 @@ npm run lint
 - If a smoke test fails with 404 for a procedure, the smoke script now attempts to auto-create the missing procedure; ensure backend writable DB connections are configured.
 - If charts don't render: open the browser console to see whether a visualization key from AI or analytics matches a key in `frontend/src/config/VisualizationRegistry.ts`. Also confirm the descriptor `data` contains the `requiredFields` for that key.
 
+- If chat history stops updating: check whether the per-employee sessionStorage cap (500 messages) has been reached for the current `employeeId` (keys like `ai_chat_messages:${employeeId}`).
+
+## Common first-run issues
+
+- CORS errors when the frontend calls the backend? Ensure backend CORS allows `http://localhost:3001` (or your frontend origin). Check the backend logs for CORS rejections.
+- Port 3000 in use? Find and stop the occupying process in PowerShell:
+
+```powershell
+Get-NetTCPConnection -LocalPort 3000 | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force }
+```
+
+- Database connection refused? Verify your `.env` settings (DB_HOST/DB_USER/DB_PASSWORD) and that Postgres is listening on the expected interface. For Supabase use the provided connection string.
+
+- Export/Import fails because backend rejects signature? Ensure `CHAT_EXPORT_SECRET` is set in the backend environment and that the frontend `BACKEND_BASE` points to `http://localhost:3000` during local testing.
+ - Export/Import fails because backend rejects signature? Ensure `CHAT_EXPORT_SECRET` is set in the backend environment and that the frontend `BACKEND_BASE` or `NEXT_PUBLIC_API_URL` points to `http://localhost:3000` during local testing.
+
 
 ## Local developer flows
 
 - Dev login: POST `/api/auth/dev-login` (used by `frontend/src/services/auth.ts`) returns a static dev token used during local development.
 - Change dev `currentEmployeeId` quickly: use the input control in the HeaderBar; it updates `UserContext` and `EmployeeInfoPanel` immediately.
-- Chat history persistence: stored in `localStorage` key `ai_chat_messages`.
+- Chat history persistence: stored in `sessionStorage` key `ai_chat_messages`.
+
+## Test User IDs (Development)
+
+- `EMP-001`: Primary dev user — synthetic trend data is injected for this employee to make charts show meaningful trends during development.
+- `EMP-TEST`: Secondary test user — seeded by `devops/seed_emp_test.js` when `ALLOW_DEV_SEEDS=true` is used.
+- `PROC-001`: Example/test procedure id — the smoke tests will auto-create this procedure if missing to avoid 404s during testing.
 
 
 ## Quick checklist before committing work

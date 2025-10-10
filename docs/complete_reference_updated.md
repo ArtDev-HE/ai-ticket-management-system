@@ -1,8 +1,10 @@
-# Complete Reference (Updated)
+Session persistence: We store the currently selected employee in sessionStorage (so your selection survives page reloads during a browser session). This is implemented in `frontend/src/context/UserContext.tsx`.
+# Complete Reference (Updated) — v1.1
 
 This document documents the current codebase, files changed during recent work, and the intended responsibilities of each file. It acts as a developer-oriented reference for contributors continuing work on the project.
 
 Last updated: 2025-10-08
+Last reviewed by: JS (2025-10-10)
 
 ---
 
@@ -18,7 +20,7 @@ These are the concrete changes made during the current development session (for 
 - Frontend
   - `frontend/src/components/ChatInput.tsx`: command parsing for `EMP-`, `PROC-`, `DEP-` commands; client-side normalization and deterministic fallbacks for `trendline_efficiency` descriptors to ensure charts always get the expected `{ fecha_actualizado, eficiencia_temporal }` numeric shape.
   - `frontend/src/components/AiOutputPanel.tsx`: sanitizes AI descriptors, normalizes alternate shapes (e.g., `{ date, value }` → `{ fecha_actualizado, eficiencia_temporal }`), validates descriptors before rendering.
-  - `frontend/src/context/UserContext.tsx` and `HeaderBar.tsx`: dev employee selection persisted to localStorage and wired into the UI; `HeaderBar` made a client component so Set Employee is interactive.
+  - `frontend/src/context/UserContext.tsx` and `HeaderBar.tsx`: dev employee selection persisted to sessionStorage and wired into the UI; `HeaderBar` made a client component so Set Employee is interactive.
   - UI fixes: `ChatHistory.tsx` and `InteractionLog.tsx` layout changes to keep header/buttons fixed while messages scroll; `EmployeeStats.tsx` now coerces numeric strings to Number before formatting.
 
 - Tests & tooling
@@ -83,7 +85,7 @@ Small notes
 ## Files changed / created during the recent integration
 
 - frontend/src/context/UserContext.tsx (NEW)
-  - Purpose: Provide `currentEmployeeId` and setter across the app. Syncs with localStorage for persistence. Used by `HeaderBar` and `EmployeeInfoPanel` to reflect dev-selected employee immediately.
+  - Purpose: Provide `currentEmployeeId` and setter across the app. Syncs with sessionStorage for persistence. Used by `HeaderBar` and `EmployeeInfoPanel` to reflect dev-selected employee immediately.
 
 - frontend/src/components/ChatInput.tsx (UPDATED)
   - Purpose: Accept user input, parse structured commands (e.g., `show efficiency trend EMP-001`), call analytics services for `EMP-`, `PROC-`, and `DEP-` identifiers, and fall back to AI mock in `ai.ts`.
@@ -161,7 +163,7 @@ Small notes
   - Supports shorthand commands that identify employees or procedures and uses typed services to build visualization descriptors. This keeps the UX deterministic and testable.
 
 - Persistence & Size Cap
-  - Chat messages saved to `localStorage` under `ai_chat_messages`. Cap set at 500 messages to avoid unbounded growth.
+  - Chat messages saved to `sessionStorage` under `ai_chat_messages`. Cap set at 500 messages to avoid unbounded growth.
 
 
 ## Tests & Verification
@@ -196,4 +198,13 @@ Small notes
 
 
 ---
+
+## Architecture Decisions Record (ADR)
+
+### ADR-001: sessionStorage for dev tokens
+
+- Decision: Use `sessionStorage` (per-tab) to persist dev access tokens and `currentEmployeeId` during local development rather than `localStorage`.
+- Rationale: Limits accidental cross-tab token reuse during development and makes dev sessions less persistent by default. Easier to clear when a tab is closed.
+- Tradeoffs: `sessionStorage` (and `localStorage`) remain accessible to JavaScript and are vulnerable to XSS. This is acceptable only for dev/test workflows. Production must use HttpOnly, Secure cookies plus CSRF protections and refresh token rotation.
+- Status: Temporary — must be removed or replaced before production deployment.
 

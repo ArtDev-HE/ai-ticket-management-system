@@ -1,6 +1,9 @@
-# 🧭 System Sync Reference (AI Ticket Management System)
+# 🧭 System Sync Reference (AI Ticket Management System) — v1.1
 
 > Purpose: Canonical handoff reference for the AI-driven Ticket Management System. Mirrors current implementation and near-future plans.
+
+Last updated: 2025-10-08
+Last reviewed by: JS (2025-10-10)
 
 ---
 
@@ -22,11 +25,18 @@
   - `ChatInput.tsx` parses structured commands (employee/procedure/department) and calls analytics services or AI mock.
   - `AiOutputPanel.tsx` sanitizes AI output (strips `title`/`label` from descriptor data) and passes validated descriptor to `AnalyticsView`.
   - AiOutputPanel update rules: the frontend will only update the visualization panel when the message is a recognized structured command (EMP-/PROC-/DEP-) or when the AI response explicitly contains both a `visualization` descriptor and the user's prompt expresses visualization intent (keywords like "chart", "plot", "visualize", "show trend"). This prevents spurious visual updates from very short or ambiguous prompts.
-  - `ChatHistory.tsx` is controlled by the page, supports an "AI is thinking..." pending item, auto-scroll, and local persistence (localStorage key `ai_chat_messages`, capped to 500 messages).
+  - `ChatHistory.tsx` is controlled by the page, supports an "AI is thinking..." pending item, auto-scroll, and local persistence (sessionStorage key `ai_chat_messages`, capped to 500 messages).
 - User context:
   - `frontend/src/context/UserContext.tsx` provides `currentEmployeeId` and setter for in-app dev selection. HeaderBar writes to this context so EmployeeInfoPanel updates immediately.
   - Session semantics: recent dev changes persist the dev token and `currentEmployeeId` in `sessionStorage` (per-tab lifetime) rather than global `localStorage`. Chat messages are persisted per-employee under keys like `ai_chat_messages:${employeeId}` and capped at 500 messages.
 - Smoke tests: `frontend/scripts/smokeTests.js` exercises core API flows and auto-creates a test procedure when missing.
+
+## Data Flow Diagram (quick)
+
+User Input -> `ChatInput` -> (structured command?) -> Analytics Service / AI Mock -> Backend API -> `AiOutputPanel` -> `AnalyticsView` -> Chart Component
+
+Alternative (AI-driven):
+User Input -> `ChatInput` -> AI Mock / AI Proxy -> returns descriptor -> `AiOutputPanel` validates -> `AnalyticsView` renders
 
 
 ## 2. Key Files & Responsibilities
@@ -39,13 +49,14 @@
   - `src/components/AiOutputPanel.tsx` - renders AI text and visualization using `AnalyticsView`.
   - `src/components/AnalyticsView.tsx` - loads chart component from `VisualizationRegistry` and passes data.
   - `src/components/charts/*` - visualization implementations using Recharts.
-  - `src/context/UserContext.tsx` - provides `currentEmployeeId` and setter; synced with localStorage for persistence.
+  - `src/context/UserContext.tsx` - provides `currentEmployeeId` and setter; synced with `sessionStorage` for persistence (dev-only behavior).
   - `src/services/*.ts` - typed axios service wrappers mirroring backend endpoints (tickets, procedures, employees, analytics, auth).
 
 - Backend
   - `src/server.js` - Express app and route registrations.
   - `src/routes/*.js` - routes: `tickets.js`, `procedimientos.js`, `empleados.js`, `analytics.js`, plus `auth.js` (dev-login).
   - `src/routes/chat.js` - export/import endpoints that sign and verify exported chat payloads. Signing uses HMAC-SHA256 with `CHAT_EXPORT_SECRET` and requires the backend environment variable `CHAT_EXPORT_SECRET` to be configured in production. The import endpoint verifies that the signed payload.employeeId matches `req.user.employeeId` (requires `verifyJwt` middleware).
+  - Note: current dev implementation will fall back to `process.env.JWT_SECRET` or a dev fallback string when `CHAT_EXPORT_SECRET` is not set (see `src/routes/chat.js`). This is a development convenience and MUST be removed or disabled for production; production should require `CHAT_EXPORT_SECRET` explicitly and fail to start otherwise.
   - `src/config/db.js` - Postgres pool connector.
 
 
@@ -91,10 +102,14 @@
    - Implement backend JWT issuance & verification.
    - Map authenticated user to `employeeId` on the server and pass to frontend in a secure session or access token payload.
    - Update axios interceptors to include auth token and refresh flow.
+  - Estimated effort: 2-3 days (core work: backend middleware, frontend auth wiring, minor UX changes) — Priority: 🔴 High
 
 2. Cleanup & consolidation
    - Remove or archive unused files in `garbage/` and other legacy artifacts.
    - Consolidate duplicated helper utilities and types across frontend services.
+
+2. Cleanup & consolidation
+  - Estimated effort: 1 day — Priority: 🟡 Medium
 
 3. UX improvements (low-risk)
    - Confirmation modal for Clear chat.
@@ -104,13 +119,14 @@
 4. Testing & CI
    - Add unit tests for critical services (analytics mapping, visualization validator).
    - Add end-to-end smoke tests to CI (GitHub Actions) that run the `scripts/smokeTests.js` against a local backend.
+    - Estimated effort: 1-2 days to add a simple GH Actions workflow to run smoke + tsc — Priority: 🟡 Medium
 
 
 ## 6. Troubleshooting (common issues)
 
 - Backend not reachable from frontend: ensure backend is running on port 3000 and CORS allows origin `http://localhost:3001`.
 - TypeScript errors after edits: run `npx -y tsc --noEmit` in `frontend/ai_management_ticket_system`.
-- Chat messages not persisting: check `localStorage` key `ai_chat_messages` and verify JSON shape.
+- Chat messages not persisting: check `sessionStorage` key `ai_chat_messages:${employeeId}` and verify JSON shape.
 - Charts not rendering: check that `visualization.key` returned by AI or analytics matches a key in `VisualizationRegistry` and that `data` contains `requiredFields`.
 
 

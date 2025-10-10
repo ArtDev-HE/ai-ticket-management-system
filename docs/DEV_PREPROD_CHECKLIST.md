@@ -1,6 +1,9 @@
+
 Last updated: 2025-10-09
 
-# DEV / Pre-production Cleanup Checklist
+# DEV / Pre-production Cleanup Checklist — v1.1
+
+Last reviewed by: JS (2025-10-10)
 
 This file captures temporary, dev-only, or test-only artifacts that were introduced during development. It lists each temporary item, where it lives, why it's temporary, and suggested remediation. Use this as the authoritative pre-prod cleanup checklist before any production release.
 
@@ -11,10 +14,21 @@ We added a number of developer conveniences to accelerate local development and 
 High-level acceptance criteria
 -----------------------------
 Every dev-only artifact is either removed, gated behind an explicit environment flag that refuses to run in production, or moved to a `devops/` or `tests/` area and documented.
-No hard-coded secrets remain in the codebase. `JWT_SECRET` and `CHAT_EXPORT_SECRET` (or equivalents) must be required in production; code should not fall back to development secrets.
-LocalStorage JWT usage is replaced with a secure cookie strategy (HttpOnly, Secure) in production builds or documented exceptions are accepted by security reviewers.
+Client-side storage for dev tokens is sessionStorage; replace with a secure cookie strategy (HttpOnly, Secure) in production builds or documented exceptions are accepted by security reviewers.
+Client-side storage for dev tokens is `sessionStorage` in recent dev iterations; replace this with a secure cookie strategy (HttpOnly, Secure) in production builds or document exceptions accepted by security reviewers.
 CI/PR checks detect known dev tokens, placeholder IDs (like `EMP-TEST`/`EMP-001`), and dev-only env flags in branches targeted for production.
 The `docs/DEV_PREPROD_CHECKLIST.md` file is finalized and linked in the release checklist.
+
+## Risk Assessment
+
+| Item | Severity | Likelihood | Priority |
+|------|----------|------------|----------|
+| Dev auth shims (`dev-login`) | Critical | Medium | P0 |
+| JWT in `sessionStorage` | High | High | P0 |
+| Mock AI enabled in prod | Medium | Low | P1 |
+| Hard-coded test IDs (EMP-TEST/EMP-001) | Medium | Medium | P1 |
+| Console logs / noisy debugging | Low | High | P2 |
+
 
 Detailed items (what to remove/gate/replace)
 -------------------------------------------
@@ -22,12 +36,12 @@ Detailed items (what to remove/gate/replace)
 1) Dev auth shims & tokens
 	 - Files / places:
 		 - `src/routes/auth.js` (contains `dev-login` and a dev fast-path that issues permissive JWTs).
-		 - `frontend/ai_management_ticket_system/src/services/auth.ts` (stores token in `localStorage` in dev flows and supports dev login).
+		 - `frontend/ai_management_ticket_system/src/services/auth.ts` (stores token in `sessionStorage` in dev flows and supports dev login).
 		 - `frontend/ai_management_ticket_system/scripts/smokeTests.js` uses a static `DEV_TOKEN_FALLBACK`.
 	 - Why temporary: these bypass real authentication flows and would allow unauthorized access if left enabled in production.
 	 - Suggested remediation:
 		 - Remove the `dev-login` endpoint or gate it with a strong guard that refuses to run when `NODE_ENV==='production'`.
-		 - Replace localStorage client-side tokens with secure HttpOnly cookies for production flows. Document a migration strategy for auth in the frontend.
+		 - Replace sessionStorage client-side tokens with secure HttpOnly cookies for production flows. Document a migration strategy for auth in the frontend.
 		 - Remove the static token fallback or make it a test-only fixture that is never merged to release branches.
 
 2) Dev users & seed scripts
@@ -66,6 +80,7 @@ Detailed items (what to remove/gate/replace)
 		 - Note: the signing uses `CHAT_EXPORT_SECRET` and may fall back to `JWT_SECRET` or a dev secret if env not set.
 	 - Why temporary: the flow is useful for dev but must be configured securely for production — especially key management and verification.
 	 - Suggested remediation:
+	 	 - Note: current dev implementation falls back to `process.env.JWT_SECRET` or a hard-coded dev secret when `CHAT_EXPORT_SECRET` is not set (see `src/routes/chat.js`). This is a development convenience and MUST be removed before production. Production deployments should require `CHAT_EXPORT_SECRET` and fail to start if it is missing.
 	 	 - Require `CHAT_EXPORT_SECRET` to be provided in production (fail fast on startup if absent). Do not fall back to `JWT_SECRET` or a dev secret in production.
 	 	 - Audit the export format and signature algorithm. The current export embeds a single-line signed JSON payload between HTML comment markers in the exported Markdown file:
 	 		 - <!--CHAT_EXPORT_JSON_START {..signed json..} CHAT_EXPORT_JSON_END-->
@@ -113,7 +128,7 @@ Before marking a release candidate as ready for production, complete the followi
 
 7) Local storage and token handling
 	 - Keys in use: `auth_token`, `current_employee`, `ai_chat_messages` (legacy per-employee keys)
-	 - Why temporary: storing JWTs in `localStorage` is vulnerable to XSS. For production, prefer HttpOnly cookies + CSRF protection and refresh token rotation.
+	 - Why temporary: storing JWTs in `sessionStorage` is vulnerable to XSS. For production, prefer HttpOnly cookies + CSRF protection and refresh token rotation.
 	 - Suggested remediation:
 		 - Design and implement cookie-based auth before production release; document migration steps. If not possible now, ensure strong CSP and review for XSS risks.
 
@@ -186,7 +201,7 @@ High-level acceptance criteria
 -----------------------------
 - Every dev-only artifact is either removed, gated behind an explicit environment flag that refuses to run in production, or moved to a `devops/` or `tests/` area and documented.
 - No hard-coded secrets remain in the codebase. `JWT_SECRET` and `CHAT_EXPORT_SECRET` (or equivalents) must be required in production; code should not fall back to development secrets.
-- LocalStorage JWT usage is replaced with a secure cookie strategy (HttpOnly, Secure) in production builds or documented exceptions are accepted by security reviewers.
+- Client-side storage for dev tokens is sessionStorage; replace with a secure cookie strategy (HttpOnly, Secure) in production builds or documented exceptions are accepted by security reviewers.
 - CI/PR checks detect known dev tokens, placeholder IDs (like `EMP-TEST`/`EMP-001`), and dev-only env flags in branches targeted for production.
 - The `docs/DEV_PREPROD_CHECKLIST.md` file is finalized and linked in the release checklist.
 
@@ -196,12 +211,12 @@ Detailed items (what to remove/gate/replace)
 1) Dev auth shims & tokens
 	 - Files / places:
 		 - `src/routes/auth.js` (contains `dev-login` and a dev fast-path that issues permissive JWTs).
-		 - `frontend/ai_management_ticket_system/src/services/auth.ts` (stores token in `localStorage` in dev flows and supports dev login).
+		 - `frontend/ai_management_ticket_system/src/services/auth.ts` (stores token in `sessionStorage` in dev flows and supports dev login).
 		 - `frontend/ai_management_ticket_system/scripts/smokeTests.js` uses a static `DEV_TOKEN_FALLBACK`.
 	 - Why temporary: these bypass real authentication flows and would allow unauthorized access if left enabled in production.
 	 - Suggested remediation:
 		 - Remove the `dev-login` endpoint or gate it with a strong guard that refuses to run when `NODE_ENV==='production'`.
-		 - Replace localStorage client-side tokens with secure HttpOnly cookies for production flows. Document a migration strategy for auth in the frontend.
+		 - Replace sessionStorage client-side tokens with secure HttpOnly cookies for production flows. Document a migration strategy for auth in the frontend.
 		 - Remove the static token fallback or make it a test-only fixture that is never merged to release branches.
 
 2) Dev users & seed scripts
@@ -255,7 +270,7 @@ Detailed items (what to remove/gate/replace)
 
 7) Local storage and token handling
 	 - Keys in use: `auth_token`, `current_employee`, `ai_chat_messages` (legacy per-employee keys)
-	 - Why temporary: storing JWTs in `localStorage` is vulnerable to XSS. For production, prefer HttpOnly cookies + CSRF protection and refresh token rotation.
+	 - Why temporary: storing JWTs in `sessionStorage` is vulnerable to XSS. For production, prefer HttpOnly cookies + CSRF protection and refresh token rotation.
 	 - Suggested remediation:
 		 - Design and implement cookie-based auth before production release; document migration steps. If not possible now, ensure strong CSP and review for XSS risks.
 

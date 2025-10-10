@@ -18,7 +18,7 @@ import type {
 
 /** ✅ Get all employees (with optional filters and pagination) */
 export const getEmployees = async (
-  filters: Record<string, any> = {}
+  filters: Record<string, unknown> = {}
 ): Promise<EmployeeListResponse> => {
   const res = await api.get<EmployeeListResponse>("/api/empleados", { params: filters });
   return res.data as EmployeeListResponse;
@@ -31,16 +31,16 @@ export const getEmployeeById = async (id: string): Promise<Employee> => {
 };
 
 /** ⚙️ Get employee workload and performance summary */
-export const getEmployeeWorkload = async (id: string): Promise<any> => {
+export const getEmployeeWorkload = async (id: string): Promise<Record<string, unknown>> => {
   // You can define a `EmployeeWorkload` type later if needed
-  const res = await api.get<any>(`/api/empleados/${id}/workload`);
-  return res.data;
+  const res = await api.get(`/api/empleados/${id}/workload`);
+  return res.data as Record<string, unknown>;
 };
 
 /** 🎫 Get all tickets assigned to a specific employee */
 export const getEmployeeTickets = async (
   id: string,
-  filters: Record<string, any> = {}
+  filters: Record<string, unknown> = {}
 ): Promise<EmployeeTicketsResponse> => {
   const res = await api.get<EmployeeTicketsResponse>(`/api/empleados/${id}/tickets`, { params: filters });
   return res.data as EmployeeTicketsResponse;

@@ -21,12 +21,13 @@ export default function LoginPage() {
         e.preventDefault();
         setError(null);
         try {
-            const res = await auth.login(username, password, employeeId || undefined);
+            await auth.login(username, password, employeeId || undefined);
             const me = await auth.getMe();
             if (me && me.employeeId) setCurrentEmployeeId(me.employeeId);
             router.replace(returnTo);
-        } catch (err: any) {
-            setError(err.message || 'Login failed');
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : String(err);
+            setError(message || 'Login failed');
         }
     };
 

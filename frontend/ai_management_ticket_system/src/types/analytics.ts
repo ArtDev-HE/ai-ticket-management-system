@@ -27,7 +27,7 @@ export interface TicketEstado {
 export interface EmployeeInfo {
   id: string;
   nombre: string;
-  organizacion?: Record<string, any>;
+  organizacion?: Record<string, unknown>;
 }
 
 export interface EmployeePerformance {

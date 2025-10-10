@@ -3,6 +3,7 @@ import { generateVisualizationDescriptor, AiResponse, getAiDescriptor } from '@/
 import { getEmployeeAnalytics } from '@/services/analytics';
 import { getProcedureAnalytics } from '@/services/analytics';
 import { getDepartmentAnalytics } from '@/services/analytics';
+import type { EmployeeAnalytics } from '@/types/analytics';
 
 // Simple command parsing helpers
 const regexes = {
@@ -41,24 +42,23 @@ export default function ChatInput({ onSend, onUserSend }: { onSend?: (resp: AiRe
         try {
           const analytics = await getEmployeeAnalytics(empId);
           // Normalize or synthesize trend data so frontend charts always get the expected shape
-          let trendData: any[] = Array.isArray((analytics as any).efficiency_trend) ? (analytics as any).efficiency_trend : [];
-
-          const normalizeEntry = (d: any, idx: number) => {
+          let trendData: Array<Record<string, unknown>> = Array.isArray((analytics as unknown as Record<string, unknown>).efficiency_trend) ? (analytics as unknown as Record<string, unknown>).efficiency_trend as Array<Record<string, unknown>> : [];
+          const normalizeEntry = (d: Record<string, unknown>, idx: number) => {
             // If already in canonical form, return normalized numeric values
-            const out: any = {};
+            const out: Record<string, unknown> = {};
             // fecha_actualizado can come as fecha_actualizado or date
             out.fecha_actualizado = d.fecha_actualizado || d.date || d.fecha_actualizado || null;
 
             // eficiencia_temporal may be present, or may be provided as 'value' (0..100) or computable from tiempo_real/tiempo_estimado
             if (d.eficiencia_temporal !== undefined && d.eficiencia_temporal !== null) {
-              out.eficiencia_temporal = Number(d.eficiencia_temporal);
+              out.eficiencia_temporal = typeof d.eficiencia_temporal === 'number' ? d.eficiencia_temporal : (typeof d.eficiencia_temporal === 'string' ? Number(d.eficiencia_temporal) : null);
             } else if (d.value !== undefined && d.value !== null) {
               // value likely in percent (0..100)
-              const v = Number(d.value);
+              const v = typeof d.value === 'number' ? d.value : (typeof d.value === 'string' ? Number(d.value) : NaN);
               out.eficiencia_temporal = isNaN(v) ? null : v / 100;
             } else if (d.tiempo_estimado && d.tiempo_real) {
-              const te = Number(d.tiempo_estimado);
-              const tr = Number(d.tiempo_real);
+              const te = typeof d.tiempo_estimado === 'number' ? d.tiempo_estimado : (typeof d.tiempo_estimado === 'string' ? Number(d.tiempo_estimado) : NaN);
+              const tr = typeof d.tiempo_real === 'number' ? d.tiempo_real : (typeof d.tiempo_real === 'string' ? Number(d.tiempo_real) : NaN);
               out.eficiencia_temporal = tr > 0 ? Math.min(1, te / tr) : null;
             } else if (d.tiempo_estimado && !d.tiempo_real) {
               out.eficiencia_temporal = 0.75;
@@ -88,7 +88,7 @@ export default function ChatInput({ onSend, onUserSend }: { onSend?: (resp: AiRe
               { fecha_actualizado: '2025-05-01', eficiencia_temporal: 0.82 }
             ];
           } else {
-            trendData = trendData.map((d: any, i: number) => normalizeEntry(d, i));
+            trendData = trendData.map((d, i) => normalizeEntry(d as Record<string, unknown>, i));
           }
 
           const resp: AiResponse = {
@@ -97,11 +97,11 @@ export default function ChatInput({ onSend, onUserSend }: { onSend?: (resp: AiRe
               key: 'trendline_efficiency',
               data: trendData,
             },
-            analytics,
+            analytics: analytics as unknown as Record<string, unknown>,
           };
           onSend?.(resp, true);
           return;
-        } catch (err: any) {
+        } catch (_err) {
           onSend?.({ text: `Error: employee ${empId} not found or analytics unavailable.` });
           return;
         }
@@ -110,21 +110,25 @@ export default function ChatInput({ onSend, onUserSend }: { onSend?: (resp: AiRe
       if (/(kpi|summary)/i.test(text) && empMatch) {
         const empId = empMatch[1];
         try {
-          const analytics = await getEmployeeAnalytics(empId);
+          const analytics = await getEmployeeAnalytics(empId) as EmployeeAnalytics;
           // ensure completion_rate exists
-          const perf = (analytics as any).performance || {} as any;
-          const completion_rate = (perf.completion_rate as string) ?? (((perf.completados || 0) / (perf.total_tickets || 1) * 100).toFixed(2) + '%');
+          const perf = (analytics as unknown as Record<string, unknown>)?.performance as Record<string, unknown> | undefined || {} as Record<string, unknown>;
+          const completadosVal = perf && (perf.completados as unknown);
+          const totalVal = perf && (perf.total_tickets as unknown);
+          const completadosNum = typeof completadosVal === 'number' ? completadosVal : (typeof completadosVal === 'string' ? Number(completadosVal) : 0);
+          const totalNum = typeof totalVal === 'number' ? totalVal : (typeof totalVal === 'string' ? Number(totalVal) : 1);
+          const completion_rate = ((totalNum && !Number.isNaN(totalNum)) ? ((completadosNum / totalNum) * 100) : 0).toFixed(2) + '%';
           const resp: AiResponse = {
             text: `KPI summary for ${empId}`,
             visualization: {
               key: 'kpireport_summary',
               data: { ...perf, completion_rate },
             },
-            analytics,
+            analytics: analytics as unknown as Record<string, unknown>,
           };
           onSend?.(resp, true);
           return;
-        } catch (err: any) {
+        } catch (_err) {
           onSend?.({ text: `Error: employee ${empId} not found or analytics unavailable.` });
           return;
         }
@@ -134,9 +138,9 @@ export default function ChatInput({ onSend, onUserSend }: { onSend?: (resp: AiRe
       if (/trend|efficien|efficiency/i.test(text) && procMatch) {
         const proc = procMatch[1];
         try {
-          const analytics = await getProcedureAnalytics(proc);
+          const analytics = await getProcedureAnalytics(proc) as unknown as Record<string, unknown>;
           // Procedure may not have efficiency_trend - check
-          if (!analytics || !('time_distribution' in analytics) && !('performance' in analytics)) {
+          if (!analytics || (!('time_distribution' in analytics) && !('performance' in analytics))) {
             onSend?.({ text: `Error: procedure ${proc} does not have trend data for this visualization.` });
             return;
           }
@@ -145,13 +149,13 @@ export default function ChatInput({ onSend, onUserSend }: { onSend?: (resp: AiRe
             text: `KPI summary for procedure ${proc}`,
             visualization: {
               key: 'kpireport_summary',
-              data: { ...(analytics as any).performance },
+              data: { ...((analytics as unknown as Record<string, unknown>)?.performance as Record<string, unknown> || {}) },
             },
-            analytics,
+            analytics: analytics as unknown as Record<string, unknown>,
           };
           onSend?.(resp, true);
           return;
-        } catch (err: any) {
+        } catch (_err) {
           onSend?.({ text: `Error: procedure ${proc} not found or analytics unavailable.` });
           return;
         }
@@ -161,18 +165,18 @@ export default function ChatInput({ onSend, onUserSend }: { onSend?: (resp: AiRe
       if (/distribution|estado/i.test(text) && depMatch) {
         const dep = depMatch[1];
         try {
-          const analytics = await getDepartmentAnalytics(dep);
+          const analytics = await getDepartmentAnalytics(dep) as unknown as Record<string, unknown>;
           const resp: AiResponse = {
             text: `Ticket distribution for ${dep}`,
             visualization: {
               key: 'barchart_ticket_distribution',
-              data: analytics.employee_performance || analytics.workload_distribution || [],
+              data: ((analytics.employee_performance as unknown) as Array<Record<string, unknown>>) || ((analytics.workload_distribution as unknown) as Array<Record<string, unknown>>) || [],
             },
-            analytics,
+            analytics: analytics as unknown as Record<string, unknown>,
           };
           onSend?.(resp, true);
           return;
-        } catch (err: any) {
+        } catch (_err) {
           onSend?.({ text: `Error: department ${dep} not found or analytics unavailable.` });
           return;
         }
@@ -183,7 +187,7 @@ export default function ChatInput({ onSend, onUserSend }: { onSend?: (resp: AiRe
       console.log('[ChatInput] received AI response:', res);
       // If the AI returned a visualization descriptor, treat this as a command only when
       // the user's prompt contains explicit visualization intent (e.g., show, display, plot).
-      const isViz = !!(res && (res as any).visualization);
+      const isViz = !!(res && (res as Record<string, unknown>).visualization);
       const intentRE = /\b(show|display|plot|chart|trend|kpi|summary|distribution|visuali|draw|graph)\b/i;
       const isIntent = intentRE.test(text);
       const isCommandFromAi = Boolean(isViz && isIntent);

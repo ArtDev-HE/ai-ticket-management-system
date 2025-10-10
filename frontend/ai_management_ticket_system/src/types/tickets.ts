@@ -10,14 +10,14 @@
 /* 🔹 ENUM-LIKE CONSTANTS          */
 /* ──────────────────────────────── */
 
-export type TicketEstado = 
+export type TicketEstado =
   | "CREADO"
   | "ACTIVO"
   | "EN_PAUSA"
   | "COMPLETADO"
   | "CANCELADO";
 
-export type TicketPrioridad = 
+export type TicketPrioridad =
   | "BAJA"
   | "MEDIA"
   | "ALTA"
@@ -47,9 +47,9 @@ export interface Ticket {
   tiempo_real?: number;
   tiempo_pausa_total?: number;
   eficiencia_temporal?: number;
-  kpis?: Record<string, any>;
-  recursos?: Record<string, any>;
-  revision?: Record<string, any>;
+  kpis?: Record<string, unknown>;
+  recursos?: Record<string, unknown>;
+  revision?: Record<string, unknown>;
   flujo?: {
     dependencias?: string[];
     pasos?: string[];
@@ -71,9 +71,9 @@ export interface CreateTicketRequest {
   tiempo_estimado?: number;
   departamento_id?: string;
   creador_id?: string;
-  kpis?: Record<string, any>;
-  recursos?: Record<string, any>;
-  flujo?: Record<string, any>;
+  kpis?: Record<string, unknown>;
+  recursos?: Record<string, unknown>;
+  flujo?: Record<string, unknown>;
 }
 
 export interface UpdateTicketRequest {
@@ -86,10 +86,10 @@ export interface UpdateTicketRequest {
   tiempo_real?: number;
   tiempo_pausa_total?: number;
   eficiencia_temporal?: number;
-  kpis?: Record<string, any>;
-  recursos?: Record<string, any>;
-  revision?: Record<string, any>;
-  flujo?: Record<string, any>;
+  kpis?: Record<string, unknown>;
+  recursos?: Record<string, unknown>;
+  revision?: Record<string, unknown>;
+  flujo?: Record<string, unknown>;
 }
 
 /* ──────────────────────────────── */

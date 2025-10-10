@@ -16,7 +16,7 @@ import {
 
 /** ✅ Get all tickets with optional filters and pagination */
 export const getTickets = async (
-  filters: Record<string, any> = {}
+  filters: Record<string, unknown> = {}
 ): Promise<TicketListResponse> => {
   const res = await api.get<TicketListResponse>("/api/tickets", { params: filters });
   return res.data as TicketListResponse;
@@ -43,8 +43,8 @@ export const updateTicket = async (
 ): Promise<TicketResponse> => {
   // The backend exposes specific update endpoints (accept, hito, estado, pause, resume, review, kpis).
   // Allow updating estado via this helper; for other updates use the dedicated service functions.
-  if (data && (data as any).estado) {
-    const res = await api.patch<TicketResponse>(`/api/tickets/${id}/estado`, { estado: (data as any).estado });
+  if (data && data.estado) {
+    const res = await api.patch<TicketResponse>(`/api/tickets/${id}/estado`, { estado: data.estado });
     return res.data as TicketResponse;
   }
 
@@ -61,7 +61,7 @@ export const deleteTicket = async (id: string): Promise<TicketResponse> => {
 /** 🧩 Get all tickets assigned to a specific employee */
 export const getTicketsByEmployee = async (
   employeeId: string,
-  filters: Record<string, any> = {}
+  filters: Record<string, unknown> = {}
 ): Promise<TicketListResponse> => {
   const res = await api.get<TicketListResponse>(`/api/empleados/${employeeId}/tickets`, {
     params: filters,
@@ -71,25 +71,31 @@ export const getTicketsByEmployee = async (
 
 /** ⚡ Get all active or pending tickets for a specific department or project */
 export const getTicketsByFilter = async (
-  filterParams: Record<string, any>
+  filterParams: Record<string, unknown>
 ): Promise<TicketListResponse> => {
   // Backend supports filtering via GET /api/tickets with query params
   return getTickets(filterParams);
 };
 
 /** 📊 Get aggregated ticket statistics (optional: for dashboards) */
-export const getTicketStats = async (): Promise<any> => {
+export const getTicketStats = async (): Promise<Record<string, number>> => {
   // Backend doesn't expose a /stats endpoint; compute basic stats client-side from tickets
   // NOTE: for large datasets, replace this with an analytics backend call
   const res = await api.get<TicketListResponse>('/api/tickets', { params: { limit: 1000 } });
   // res.data may be { data: Ticket[] } or Ticket[] depending on backend contract; normalize
   const raw = res.data as unknown;
-  const ticketsArr = Array.isArray(raw as any) ? (raw as any[]) : ((raw as any)?.data ?? []);
+  const ticketsArrRaw = Array.isArray(raw) ? raw : ((raw as Record<string, unknown>)?.data ?? []);
+
+  const isTicket = (x: unknown): x is Ticket => {
+    return typeof x === 'object' && x !== null && 'estado' in x;
+  };
+
+  const ticketsArr = Array.isArray(ticketsArrRaw) ? ticketsArrRaw.filter(isTicket) : [];
   const stats = {
     total: ticketsArr.length,
-    completed: ticketsArr.filter((t: any) => t.estado === 'COMPLETADO').length,
-    active: ticketsArr.filter((t: any) => t.estado === 'ACTIVO').length,
-    paused: ticketsArr.filter((t: any) => t.estado === 'EN_PAUSA').length,
+    completed: ticketsArr.filter((t) => t.estado === 'COMPLETADO').length,
+    active: ticketsArr.filter((t) => t.estado === 'ACTIVO').length,
+    paused: ticketsArr.filter((t) => t.estado === 'EN_PAUSA').length,
   };
   return stats;
 };
@@ -98,7 +104,7 @@ export const getTicketStats = async (): Promise<any> => {
 export const updateTicketState = async (
   id: string,
   newState: string,
-  data: Record<string, any> = {}
+  data: Record<string, unknown> = {}
 ): Promise<TicketResponse> => {
   // backend endpoint is /api/tickets/:id/estado
   const res = await api.patch<TicketResponse>(`/api/tickets/${id}/estado`, { estado: newState });
@@ -115,23 +121,23 @@ export const updateHito = async (id: string, porcentaje: number, completado: boo
   return res.data as TicketResponse;
 };
 
-export const reviewTicket = async (id: string, data: any) => {
-  const res = await api.post(`/api/tickets/${id}/review`, data);
+export const reviewTicket = async (id: string, data: unknown) => {
+  const res = await api.post(`/api/tickets/${id}/review`, data as unknown as Record<string, unknown>);
   return res.data;
 };
 
-export const submitKpis = async (id: string, kpis_especificos: any) => {
-  const res = await api.post(`/api/tickets/${id}/kpis`, { kpis_especificos });
+export const submitKpis = async (id: string, kpis_especificos: unknown) => {
+  const res = await api.post(`/api/tickets/${id}/kpis`, { kpis_especificos } as { kpis_especificos: Record<string, unknown> });
   return res.data;
 };
 
-export const pauseTicket = async (id: string, data: any) => {
-  const res = await api.patch(`/api/tickets/${id}/pause`, data);
+export const pauseTicket = async (id: string, data: unknown) => {
+  const res = await api.patch(`/api/tickets/${id}/pause`, data as unknown as Record<string, unknown>);
   return res.data;
 };
 
-export const resumeTicket = async (id: string, data: any) => {
-  const res = await api.patch(`/api/tickets/${id}/resume`, data);
+export const resumeTicket = async (id: string, data: unknown) => {
+  const res = await api.patch(`/api/tickets/${id}/resume`, data as unknown as Record<string, unknown>);
   return res.data;
 };
 

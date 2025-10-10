@@ -33,17 +33,17 @@ export default function KPIReport({ data }: KPIReportProps) {
   }
 
   const metrics = [
-    { title: "Total Tickets", value: data.total_tickets, accent: "border-blue-400" },
-    { title: "Completed", value: data.completados, accent: "border-green-400" },
-    { title: "Completion Rate", value: data.completion_rate, accent: "border-indigo-400" },
-    { title: "Efficiency Avg", value: data.eficiencia_promedio?.toFixed(2) ?? "—", accent: "border-yellow-400" },
-    { title: "KPI Compliance", value: data.kpi_compliance_avg?.toFixed(2) ?? "—", accent: "border-pink-400" },
+    { title: "Total Tickets", value: data.total_tickets ?? "\u2014", accent: "border-blue-400" },
+    { title: "Completed", value: data.completados ?? "\u2014", accent: "border-green-400" },
+    { title: "Completion Rate", value: data.completion_rate ?? "\u2014", accent: "border-indigo-400" },
+    { title: "Efficiency Avg", value: typeof data.eficiencia_promedio === 'number' ? data.eficiencia_promedio.toFixed(2) : "\u2014", accent: "border-yellow-400" },
+    { title: "KPI Compliance", value: typeof data.kpi_compliance_avg === 'number' ? data.kpi_compliance_avg.toFixed(2) : "\u2014", accent: "border-pink-400" },
   ];
 
   return (
     <div className="flex flex-wrap gap-4 bg-gray-50 p-4 rounded-2xl shadow-inner">
       {metrics.map((m) => (
-        <Card key={m.title} title={m.title} value={m.value as any} accent={m.accent} />
+        <Card key={m.title} title={m.title} value={m.value} accent={m.accent} />
       ))}
     </div>
   );
