@@ -14,7 +14,8 @@ This changelog tracks documentation updates, reviewer initials, and brief notes.
  - 2025-10-10 session updates
    - Performed a frontend TypeScript/ESLint pass to remove explicit `any` usages and add runtime guards for AI/visualization payloads.
    - Fixed a parse error in the frontend smoke test harness and executed the smoke tests against a running backend; the smoke tests completed successfully and backend `/health` returned OK.
-   - Committed the code and documentation changes to `main` with message: "chore: lint/type fixes and run frontend smoke tests".
+  - Committed the code and documentation changes to `main` with message: "chore: lint/type fixes and run frontend smoke tests".
+  - n8n integration note: added guidance to prefer the Code node (`n8n-nodes-base.code`) with `jsCode`/`pyCode`, and reminder that editor test webhooks are reachable under `/webhook-test/`.
   - Verification:
     - UI manually tested in-browser; chat and visualization panels render correctly.
     - Dev smoke tests executed and passed; commits pushed to remote `main`.

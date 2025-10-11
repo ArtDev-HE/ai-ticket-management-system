@@ -1,5 +1,7 @@
 # Quick Start Guide — v1.1
 
+> n8n integration notes: when testing webhooks from the editor use the test prefix `/webhook-test/` (e.g. http://localhost:5678/webhook-test/ai-proxy). The Code node (JS/Python) replaces the older Function node; exported workflows use `n8n-nodes-base.code` with `jsCode` for JS. Example workflow exports live in `devops/` (e.g. `My workflow.json`).
+
 This short guide helps a developer get the project running locally and continue work in the next session. Commands are PowerShell-friendly (Windows).
 ## Local developer flows
 

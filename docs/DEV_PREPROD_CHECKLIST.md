@@ -1,6 +1,8 @@
 
 Last updated: 2025-10-09
 
+> n8n integration notes: When building or importing workflows, prefer the Code node (type `n8n-nodes-base.code`) and `jsCode`/`pyCode` fields. In editor test mode the webhook path is prefixed with `/webhook-test/`; use that URL when using the listen/test button. Exports are usually array-wrapped — if import fails, try wrapping/unwrapping the JSON array.
+
 # DEV / Pre-production Cleanup Checklist — v1.1
 
 Last reviewed by: JS (2025-10-10)

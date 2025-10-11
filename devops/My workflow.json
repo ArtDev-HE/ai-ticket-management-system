@@ -1,0 +1,90 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ai-proxy",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "e8bad961-1263-4ed6-8445-fc6746afbf21",
+      "name": "Webhook",
+      "webhookId": "9d756789-34da-4d3f-a725-640408356b5a"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Build a descriptor matching src/schemas/aiDescriptor.schema.json\nreturn [\n  {\n    json: {\n      // required text field\n      text: \"Mock AI response from n8n\",\n\n      // optional visualization field (object)\n      visualization: {\n        key: \"kpi_simple\",\n        data: [\n          { label: \"Resolved\", value: 42 },\n          { label: \"Pending\", value: 7 }\n        ]\n      }\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "f7761ec3-ee95-4833-8f6c-a7b52c237516",
+      "name": "BuildDescriptor"
+    },
+    {
+      "parameters": {
+        "enableResponseOutput": true,
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        416,
+        0
+      ],
+      "id": "f2e90961-a141-458f-8379-500408c96988",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "BuildDescriptor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "BuildDescriptor": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "executionTimeout": -1,
+    "availableInMCP": false,
+    "timeSavedPerExecution": 2
+  },
+  "versionId": "1a517663-400d-4588-82fd-061afbbd01b6",
+  "meta": {
+    "instanceId": "5c3e3c415925c54457529a37e95fcf638391b286199873840a3eee4e5b34e54b"
+  },
+  "id": "PvcfiUpcs3IgRvyy",
+  "tags": []
+}

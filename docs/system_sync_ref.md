@@ -5,6 +5,8 @@
 Last updated: 2025-10-08
 Last reviewed by: JS (2025-10-10)
 
+> n8n integration notes: Use the Code node (`n8n-nodes-base.code`) with `jsCode` or `pyCode` in modern n8n editors. When testing in the editor the webhook path is reachable under `/webhook-test/<path>` (e.g. `http://localhost:5678/webhook-test/ai-proxy`). Example workflows live under `devops/`.
+
 ---
 
 ## 1. Current Snapshot (2025-10-08)

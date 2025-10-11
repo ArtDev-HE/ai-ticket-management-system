@@ -1,0 +1,88 @@
+[
+    {
+        "nodes": [
+            {
+                "parameters": {
+                    "path": "ai-proxy",
+                    "httpMethod": "POST",
+                    "responseMode": "responseNode",
+                    "options": {
+                        "rawBody": false
+                    }
+                },
+                "id": "1",
+                "name": "Webhook",
+                "type": "n8n-nodes-base.webhook",
+                "typeVersion": 2.1,
+                "position": [
+                    250,
+                    300
+                ]
+            },
+            {
+                "parameters": {
+                    "functionCode": "// Build AI descriptor matching schema\nreturn [\n  {\n    json: {\n      text: 'Mock AI response from n8n',\n      visualization: {\n        key: 'kpi_simple',\n        data: [\n          { label: 'Resolved', value: 42 },\n          { label: 'Pending', value: 7 }\n        ]\n      }\n    }\n  }\n];"
+                },
+                "id": "2",
+                "name": "BuildDescriptor",
+                "type": "n8n-nodes-base.function",
+                "typeVersion": 1,
+                "position": [
+                    600,
+                    300
+                ]
+            },
+            {
+                "parameters": {
+                    "respondWith": "firstIncomingItem",
+                    "options": {
+                        "responseCode": 200,
+                        "responseHeaders": {
+                            "entries": [
+                                {
+                                    "name": "Content-Type",
+                                    "value": "application/json"
+                                }
+                            ]
+                        }
+                    }
+                },
+                "id": "3",
+                "name": "RespondToWebhook",
+                "type": "n8n-nodes-base.respondToWebhook",
+                "typeVersion": 1.4,
+                "position": [
+                    950,
+                    300
+                ]
+            }
+        ],
+        "connections": {
+            "Webhook": {
+                "main": [
+                    [
+                        {
+                            "node": "BuildDescriptor",
+                            "type": "main",
+                            "index": 0
+                        }
+                    ]
+                ]
+            },
+            "BuildDescriptor": {
+                "main": [
+                    [
+                        {
+                            "node": "RespondToWebhook",
+                            "type": "main",
+                            "index": 0
+                        }
+                    ]
+                ]
+            }
+        },
+        "active": false,
+        "settings": {},
+        "name": "AI Proxy - Simple Descriptor"
+    }
+]

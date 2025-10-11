@@ -1,3 +1,10 @@
+# Complete Reference (Updated) — v1.1
+
+This document documents the current codebase, files changed during recent work, and the intended responsibilities of each file. It acts as a developer-oriented reference for contributors continuing work on the project.
+
+Last updated: 2025-10-08
+Last reviewed by: JS (2025-10-10)
+> n8n integration notes: the repository includes example workflow exports under `devops/` (e.g. `My workflow.json`). Newer n8n versions use the Code node (`n8n-nodes-base.code`) with a `jsCode` or `pyCode` property instead of the old Function node. While testing in the editor, use the test URL prefix `/webhook-test/` (for example: `http://localhost:5678/webhook-test/ai-proxy`).
 Session persistence: We store the currently selected employee in sessionStorage (so your selection survives page reloads during a browser session). This is implemented in `frontend/src/context/UserContext.tsx`.
 # Complete Reference (Updated) — v1.1
 
