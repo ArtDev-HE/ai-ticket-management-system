@@ -29,17 +29,17 @@ async function main() {
     const password = `P@ssw0rd-${Math.floor(Math.random() * 9000) + 1000}`;
     console.log('Creating temp user:', email);
 
-        // Create user via Admin API
-        // Use the admin/users endpoint and include the 'apikey' header (required by Supabase)
-        const createRes = await fetch(`${SUPABASE_URL.replace(/\/$/, '')}/auth/v1/admin/users`, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${SERVICE_KEY}`,
-                'apikey': SERVICE_KEY,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ email, password, email_confirm: true })
-        });
+    // Create user via Admin API
+    // Use the admin/users endpoint and include the 'apikey' header (required by Supabase)
+    const createRes = await fetch(`${SUPABASE_URL.replace(/\/$/, '')}/auth/v1/admin/users`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${SERVICE_KEY}`,
+            'apikey': SERVICE_KEY,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email, password, email_confirm: true })
+    });
 
     if (!createRes.ok) {
         console.error('Failed to create user:', createRes.status, await createRes.text());
@@ -50,14 +50,14 @@ async function main() {
     console.log('Created user id:', uid);
 
     // Sign in as the user (password grant)
-    const tokenRes = await fetch(`${SUPABASE_URL.replace(/\/$/, '')}/auth/v1/token?grant_type=password`, {
-        method: 'POST',
-        headers: {
-            'apikey': ANON_KEY,
-            'Content-Type': 'application/x-www-form-urlencoded'
-        },
-        body: new URLSearchParams({ username: email, password })
-    });
+        const tokenRes = await fetch(`${SUPABASE_URL.replace(/\/$/, '')}/auth/v1/token?grant_type=password`, {
+            method: 'POST',
+            headers: {
+                'apikey': ANON_KEY,
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: new URLSearchParams({ email: email, password: password }).toString()
+        });
 
     if (!tokenRes.ok) {
         console.error('Failed to sign in user:', tokenRes.status, await tokenRes.text());
