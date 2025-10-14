@@ -50,13 +50,14 @@ async function main() {
     console.log('Created user id:', uid);
 
     // Sign in as the user (password grant)
+        // Sign in using JSON body (some Supabase deployments expect JSON here)
         const tokenRes = await fetch(`${SUPABASE_URL.replace(/\/$/, '')}/auth/v1/token?grant_type=password`, {
             method: 'POST',
             headers: {
                 'apikey': ANON_KEY,
-                'Content-Type': 'application/x-www-form-urlencoded'
+                'Content-Type': 'application/json'
             },
-            body: new URLSearchParams({ email: email, password: password }).toString()
+            body: JSON.stringify({ email: email, password: password })
         });
 
     if (!tokenRes.ok) {
