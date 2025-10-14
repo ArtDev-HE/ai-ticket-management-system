@@ -168,4 +168,88 @@ Last synced: 2025-10-08
 - Web UI tested manually and confirmed to load the main page and render charts for AI/analytics responses.
 - Smoke tests ran successfully against the local backend; changes were committed and pushed.
 
+## Database schema snapshot (selected tables)
+
+Short developer-friendly snapshot recorded during the inspection session. Use `information_schema` or psql `\d+ <table>` for authoritative schema in your target environment.
+
+- `public.actividades`
+  - id: character varying (PK)
+  - nombre: character varying NOT NULL
+  - descripcion: text NULL
+  - estado: character varying DEFAULT 'ACTIVO'
+  - configuracion: jsonb DEFAULT '{}'
+  - created_at: timestamp WITHOUT time zone DEFAULT CURRENT_TIMESTAMP
+
+- `public.alertas`
+  - id: integer (serial PK)
+  - ticket_id: character varying NULL (FK -> public.tickets.id)
+  - tipo: character varying NOT NULL
+  - destinatarios: jsonb DEFAULT '[]'
+  - payload: jsonb DEFAULT '{}'
+  - estado: character varying DEFAULT 'PENDIENTE'
+  - fecha_creacion: timestamp WITHOUT time zone DEFAULT CURRENT_TIMESTAMP
+  - fecha_lectura: timestamp WITHOUT time zone NULL
+
+- `public.empleados`
+  - id: character varying (PK)
+  - nombre: character varying NOT NULL
+  - email: character varying NOT NULL (unique)
+  - activo: boolean DEFAULT true
+  - organizacion: jsonb DEFAULT '{}'
+  - permisos: jsonb DEFAULT '{}'
+  - competencias: jsonb DEFAULT '{}'
+  - historial: jsonb DEFAULT '{}'
+  - created_at: timestamp WITHOUT time zone DEFAULT CURRENT_TIMESTAMP
+  - updated_at: timestamp WITHOUT time zone DEFAULT CURRENT_TIMESTAMP
+
+- `public.tickets` (selected)
+  - id: character varying (PK)
+  - codigo_actividad: character varying NOT NULL
+  - codigo_linea_trabajo: character varying NOT NULL
+  - codigo_procedimiento: character varying NOT NULL
+  - titulo: character varying NOT NULL
+  - descripcion: text NULL
+  - asignado_a: character varying NULL
+  - asignado_por: character varying NULL
+  - tiempo_estimado: integer NOT NULL
+  - tiempo_real: integer NULL
+  - estado: character varying NULL
+  - hitos, kpis, metadatos, flujo: jsonb columns
+  - created_at, updated_at: timestamp WITHOUT time zone
+
+  - `public.departamentos`
+    - id: character varying (PK)
+    - nombre: character varying NOT NULL
+    - descripcion: text NULL
+    - configuracion: jsonb DEFAULT '{}'
+    - created_at: timestamp WITHOUT time zone DEFAULT CURRENT_TIMESTAMP
+
+- `public.procedimientos` (selected)
+  - id: character varying (PK)
+  - codigo: character varying NOT NULL (unique)
+  - nombre: character varying NOT NULL
+  - descripcion: text NULL
+  - version: integer
+  - tiempo_estimado_horas: integer NULL
+  - departamento_id: character varying NULL (FK -> departamentos.id)
+  - recursos: jsonb DEFAULT '{}'
+  - kpis: jsonb DEFAULT '{}'
+  - responsabilidades: jsonb DEFAULT '{}'
+  - validaciones: jsonb DEFAULT '{}'
+  - created_at, updated_at: timestamp WITHOUT time zone
+
+- `public.lineas_trabajo` (selected)
+  - id: character varying (PK)
+  - actividad_id: character varying NOT NULL (FK -> public.actividades.id)
+  - nombre: character varying NOT NULL
+  - orden: integer NULL
+  - tipo: character varying NULL
+  - configuracion: jsonb DEFAULT '{}'
+  - created_at: timestamp WITHOUT time zone DEFAULT CURRENT_TIMESTAMP
+  - Indexes: `idx_lineas_trabajo_actividad`, `lineas_trabajo_pkey`
+  - Sample rows: LT-PREPARACION, LT-PROCESAMIENTO, LT-FINALIZACION (row_count: 3)
+
+RLS verification (staging)
+ - For staging verification of row-level security we now include `devops/rls_verify_v2.sql` which creates helper functions and lightweight `_v2` policies (belongs_to helper + `tickets_insert_policy_v2`, `tickets_update_policy_v2`, `procedimientos_*_v2`, `empleados_update_policy_v2`), runs quick insert tests using `set_config` to simulate jwt.claims and cleans up test rows. Use `devops/run_rls_verify.ps1` on Windows to run the script.
+
 

@@ -21,15 +21,15 @@
             },
             {
                 "parameters": {
-                    "functionCode": "// Build AI descriptor matching schema\nreturn [\n  {\n    json: {\n      text: 'Mock AI response from n8n',\n      visualization: {\n        key: 'kpi_simple',\n        data: [\n          { label: 'Resolved', value: 42 },\n          { label: 'Pending', value: 7 }\n        ]\n      }\n    }\n  }\n];"
+                    "jsCode": "// Build a descriptor matching src/schemas/aiDescriptor.schema.json\\nreturn [\\n  {\\n    json: {\\n      // required text field\\n      text: \\\"Mock AI response from n8n\\\",\\n\\n      // optional visualization field (object)\\n      visualization: {\\n        key: \\\"kpi_simple\\\",\\n        data: [\\n          { label: \\\"Resolved\\\", value: 42 },\\n          { label: \\\"Pending\\\", value: 7 }\\n        ]\\n      }\\n    }\\n  }\\n];"
                 },
-                "id": "2",
+                "id": "f7761ec3-ee95-4833-8f6c-a7b52c237516",
                 "name": "BuildDescriptor",
-                "type": "n8n-nodes-base.function",
-                "typeVersion": 1,
+                "type": "n8n-nodes-base.code",
+                "typeVersion": 2,
                 "position": [
-                    600,
-                    300
+                    208,
+                    0
                 ]
             },
             {

@@ -186,6 +186,114 @@ Small notes
 - Developer verified the webapp UI in the browser and confirmed chat + analytics visualizations display as expected.
 - Smoke tests were executed and passed; commits pushed to `main`.
 
+## Database schema snapshot (selected tables)
+
+Added quick reference rows for two recently inspected tables to help developers and operations teams understand data shapes used by the app.
+
+- actividades (public.actividades)
+  - Columns:
+    - id: character varying (PK)
+    - nombre: character varying NOT NULL
+    - descripcion: text NULL
+    - estado: character varying DEFAULT 'ACTIVO'
+    - configuracion: jsonb DEFAULT '{}'
+    - created_at: timestamp WITHOUT time zone DEFAULT CURRENT_TIMESTAMP
+  - Notes: Primary key on `id`. No outgoing foreign keys. Example dev row count observed: 1 (sample row exists).
+
+- alertas (public.alertas)
+  - Columns:
+    - id: integer (PK, serial)
+    - ticket_id: character varying NULL (FK -> public.tickets.id)
+    - tipo: character varying NOT NULL
+    - destinatarios: jsonb DEFAULT '[]'
+    - payload: jsonb DEFAULT '{}'
+    - estado: character varying DEFAULT 'PENDIENTE'
+    - fecha_creacion: timestamp WITHOUT time zone DEFAULT CURRENT_TIMESTAMP
+    - fecha_lectura: timestamp WITHOUT time zone NULL
+  - Notes: Foreign key `ticket_id` -> `tickets.id`. Indexes present: `alertas_pkey` (id), `idx_alertas_estado`, `idx_alertas_fecha`, `idx_alertas_ticket`, `idx_alertas_tipo`. Example dev row count observed: 0 (empty table in the inspected instance).
+
+- empleados (public.empleados)
+  - Columns:
+    - id: character varying (PK)
+    - nombre: character varying NOT NULL
+    - email: character varying NOT NULL (unique)
+    - activo: boolean DEFAULT true
+    - organizacion: jsonb DEFAULT '{}'
+    - permisos: jsonb DEFAULT '{}'
+    - competencias: jsonb DEFAULT '{}'
+    - historial: jsonb DEFAULT '{}'
+    - created_at: timestamp WITHOUT time zone DEFAULT CURRENT_TIMESTAMP
+    - updated_at: timestamp WITHOUT time zone DEFAULT CURRENT_TIMESTAMP
+  - Notes: Unique index on `email`, GIN indexes on `organizacion` and `permisos`. Observed sample rows include `organizacion.departamento` values such as `DEPT-MARKETING`, `DEPT-CREATIVO`, and `DEPT-TEST`. Example dev row count observed: 7.
+
+- tickets (public.tickets)
+  - Columns (selected):
+    - id: character varying (PK)
+    - codigo_actividad: character varying NOT NULL
+    - codigo_linea_trabajo: character varying NOT NULL
+    - codigo_procedimiento: character varying NOT NULL
+    - titulo: character varying NOT NULL
+    - descripcion: text NULL
+    - asignado_a: character varying NULL
+    - asignado_por: character varying NULL
+    - fecha_creacion: timestamp WITHOUT time zone DEFAULT CURRENT_TIMESTAMP
+    - fecha_aceptacion: timestamp WITHOUT time zone NULL
+    - fecha_actualizado: timestamp WITHOUT time zone NULL
+    - tiempo_estimado: integer NOT NULL
+    - tiempo_real: integer NULL
+    - tiempo_pausa_total: integer DEFAULT 0
+    - estado: character varying NULL
+    - flujo, hitos, kpis, recursos, revision, metadatos: jsonb columns (various defaults)
+    - grupo_paralelo_id: character varying NULL
+    - tipo: character varying DEFAULT 'REGULAR'
+    - created_at, updated_at: timestamp WITHOUT time zone DEFAULT CURRENT_TIMESTAMP
+  - Notes: Multiple btree and GIN indexes exist (e.g., on `asignado_a`, `codigo_procedimiento`, `hitos` GIN, `kpis` GIN). Sample dev row count observed: 14. Use `asignado_a` -> employees table to scope department-level director policies.
+
+- departamentos (public.departamentos)
+  - Columns:
+    - id: character varying (PK)
+    - nombre: character varying NOT NULL
+    - descripcion: text NULL
+    - configuracion: jsonb DEFAULT '{}'
+    - created_at: timestamp WITHOUT time zone DEFAULT CURRENT_TIMESTAMP
+  - Notes: Small lookup table of department ids (sample rows: `DEPT-MARKETING`, `DEPT-CREATIVO`). Example dev row count observed: 2.
+
+- procedimientos (public.procedimientos)
+  - Columns (selected):
+    - id: character varying (PK)
+    - codigo: character varying NOT NULL (unique)
+    - nombre: character varying NOT NULL
+    - descripcion: text NULL
+    - version: character varying DEFAULT '1.0'
+    - tiempo_estimado_horas: integer NULL
+    - complejidad: character varying NULL
+    - categoria: character varying NULL
+    - departamento_id: character varying NULL (FK-like reference to departamentos.id)
+    - activo: boolean DEFAULT true
+    - recursos, kpis, responsabilidades, validaciones: jsonb columns
+    - created_at, updated_at: timestamp WITHOUT time zone DEFAULT CURRENT_TIMESTAMP
+  - Notes: Unique index on `codigo`, GIN indexes for `recursos` and `responsabilidades`. Sample rows show `departamento_id` values like `DEPT-MARKETING`. Example dev row count observed: 4.
+
+    - `public.lineas_trabajo` (selected)
+      - id: character varying (PK)
+      - actividad_id: character varying NOT NULL (FK -> actividades.id)
+      - nombre: character varying NOT NULL
+      - orden: integer NULL
+      - tipo: character varying NULL (e.g., 'SECUENCIAL' | 'PARALELO')
+      - configuracion: jsonb DEFAULT '{}'
+      - created_at: timestamp WITHOUT time zone DEFAULT CURRENT_TIMESTAMP
+      - Indexes: `idx_lineas_trabajo_actividad` (actividad_id), primary key on `id`
+      - Sample rows: LT-PREPARACION, LT-PROCESAMIENTO, LT-FINALIZACION (row_count: 3)
+
+    RLS verification script
+     - Added `devops/rls_verify_v2.sql` (creates helper `app.jwt_claim` + `app.procedimiento_belongs_to_department`, enables RLS and installs `_v2` policies for safe staging verification). The v2 policy names are:
+      - `tickets_insert_policy_v2`, `tickets_update_policy_v2`
+      - `procedimientos_insert_policy_v2`, `procedimientos_update_policy_v2`, `procedimientos_delete_policy_v2`
+      - `empleados_update_policy_v2`
+     - A Windows PowerShell runner `devops/run_rls_verify.ps1` is included to run the SQL file via `psql`.
+
+These snapshots are intended as a quick developer reference only; the production schema may differ. For exact column types and constraints run queries against the target database (information_schema or psql `\d+ <table>`).
+
 
 ## Known issues / Deferred work
 

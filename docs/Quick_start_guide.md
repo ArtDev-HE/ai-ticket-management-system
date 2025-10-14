@@ -184,3 +184,80 @@ npm run test:ai-validation
 - UI verified in-browser by developer; core pages and chat/visualization flows render correctly.
 - Dev smoke tests passed against the running backend. All changes were committed and pushed.
 
+## Database schema snapshot (selected)
+
+Quick reference for two tables inspected during the recent session. These snapshots are a convenience for developers; run schema inspection queries in the target DB for authoritative definitions.
+
+- `public.actividades`
+	- id: varchar (PK)
+	- nombre: varchar NOT NULL
+	- descripcion: text NULL
+	- estado: varchar DEFAULT 'ACTIVO'
+	- configuracion: jsonb DEFAULT '{}'
+	- created_at: timestamp DEFAULT CURRENT_TIMESTAMP
+
+- `public.alertas`
+	- id: integer (serial PK)
+	- ticket_id: varchar NULL (FK -> public.tickets.id)
+	- tipo: varchar NOT NULL
+	- destinatarios: jsonb DEFAULT '[]'
+	- payload: jsonb DEFAULT '{}'
+	- estado: varchar DEFAULT 'PENDIENTE'
+	- fecha_creacion: timestamp DEFAULT CURRENT_TIMESTAMP
+	- fecha_lectura: timestamp NULL
+
+- `public.empleados`
+	- id: varchar (PK)
+	- nombre: varchar NOT NULL
+	- email: varchar NOT NULL (unique)
+	- activo: boolean DEFAULT true
+	- organizacion: jsonb DEFAULT '{}'
+	- permisos: jsonb DEFAULT '{}'
+	- competencias: jsonb DEFAULT '{}'
+	- historial: jsonb DEFAULT '{}'
+	- created_at: timestamp DEFAULT CURRENT_TIMESTAMP
+	- updated_at: timestamp DEFAULT CURRENT_TIMESTAMP
+
+- `public.tickets` (selected)
+	- id: varchar (PK)
+	- codigo_actividad: varchar NOT NULL
+	- codigo_linea_trabajo: varchar NOT NULL
+	- codigo_procedimiento: varchar NOT NULL
+	- titulo: varchar NOT NULL
+	- descripcion: text NULL
+	- asignado_a: varchar NULL (employee id)
+	- asignado_por: varchar NULL (employee id)
+	- tiempo_estimado: integer NOT NULL
+	- tiempo_real: integer NULL
+	- estado: varchar NULL
+	- hitos, kpis, metadatos, flujo: jsonb columns
+	- created_at, updated_at: timestamps
+
+- `public.departamentos`
+	- id: varchar (PK)
+	- nombre: varchar NOT NULL
+	- descripcion: text NULL
+	- configuracion: jsonb DEFAULT '{}'
+	- created_at: timestamp
+
+- `public.procedimientos`
+	- id: varchar (PK)
+	- codigo: varchar NOT NULL (unique)
+	- nombre: varchar NOT NULL
+	- descripcion: text NULL
+	- departamento_id: varchar NULL
+	- recursos, kpis, responsabilidades: jsonb
+	- created_at, updated_at: timestamps
+
+- `public.lineas_trabajo`
+	- id: varchar (PK)
+	- actividad_id: varchar NOT NULL (FK -> public.actividades.id)
+	- nombre: varchar NOT NULL
+	- orden: integer NULL
+	- tipo: varchar NULL
+	- configuracion: jsonb DEFAULT '{}'
+	- created_at: timestamp DEFAULT CURRENT_TIMESTAMP
+
+RLS verification
+ - A staging-friendly verification script was added under `devops/rls_verify_v2.sql` which creates helper functions and idempotent v2 policies (suffix `_v2`) for `tickets`, `procedimientos`, and `empleados`, runs simple insert tests (simulating JWT claims with `set_config`) and cleans up test rows. A PowerShell helper `devops/run_rls_verify.ps1` is provided for Windows-based developers.
+

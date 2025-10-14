@@ -6,7 +6,9 @@
         "httpMethod": "POST",
         "path": "ai-proxy",
         "responseMode": "responseNode",
-        "options": {}
+        "options": {
+          "rawBody": false
+        }
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
@@ -33,9 +35,18 @@
     },
     {
       "parameters": {
+        "respondWith": "firstIncomingItem",
         "enableResponseOutput": true,
         "options": {
-          "responseCode": 200
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
         }
       },
       "type": "n8n-nodes-base.respondToWebhook",

@@ -128,6 +128,62 @@ Before marking a release candidate as ready for production, complete the followi
 5. Run the devops seed/smoke scripts only against a disposable test DB and verify they refuse to run without explicit env guards.
 6. Merge a final PR that documents the remediation and changes in `docs/DEV_PREPROD_CHECKLIST.md`.
 
+## Database schema snapshot (selected tables)
+
+During the recent inspection we recorded quick schema snapshots for two tables to guide remediation and RLS planning. These are developer notes only; run `information_schema` queries against the target DB for authoritative metadata.
+
+	- id: character varying (PK)
+	- nombre: character varying NOT NULL
+	- descripcion: text NULL
+	- estado: character varying DEFAULT 'ACTIVO'
+	- configuracion: jsonb DEFAULT '{}'
+	- created_at: timestamp WITHOUT time zone DEFAULT CURRENT_TIMESTAMP
+
+	- id: integer (serial PK)
+	- ticket_id: character varying NULL (FK -> public.tickets.id)
+	- tipo: character varying NOT NULL
+	- destinatarios: jsonb DEFAULT '[]'
+	- payload: jsonb DEFAULT '{}'
+	- estado: character varying DEFAULT 'PENDIENTE'
+	- fecha_creacion: timestamp WITHOUT time zone DEFAULT CURRENT_TIMESTAMP
+	- fecha_lectura: timestamp WITHOUT time zone NULL
+
+	- `public.empleados`
+		- id: character varying (PK)
+		- nombre: character varying NOT NULL
+		- email: character varying NOT NULL (unique)
+		- activo: boolean DEFAULT true
+		- organizacion: jsonb DEFAULT '{}'
+		- permisos: jsonb DEFAULT '{}'
+		- competencias: jsonb DEFAULT '{}'
+		- historial: jsonb DEFAULT '{}'
+		- created_at: timestamp WITHOUT time zone DEFAULT CURRENT_TIMESTAMP
+		- updated_at: timestamp WITHOUT time zone DEFAULT CURRENT_TIMESTAMP
+
+		- `public.tickets` (selected)
+			- id: character varying (PK)
+			- codigo_actividad: character varying NOT NULL
+			- codigo_linea_trabajo: character varying NOT NULL
+			- codigo_procedimiento: character varying NOT NULL
+			- titulo: character varying NOT NULL
+			- asignado_a / asignado_por: character varying (employee ids)
+			- tiempo_estimado / tiempo_real: integer
+			- hitos, kpis, metadatos: jsonb
+			- created_at, updated_at: timestamps
+
+			- `public.departamentos`
+				- id: character varying (PK)
+				- nombre: character varying NOT NULL
+				- descripcion: text NULL
+				- configuracion: jsonb DEFAULT '{}'
+				- created_at: timestamp WITHOUT time zone DEFAULT CURRENT_TIMESTAMP
+
+		NOTE: RLS planning will be finalized after schema inspection of all seven tables (actividades, alertas, departamentos, empleados, lineas_trabajo, procedimientos, tickets). Do not apply RLS policies in production until all related table schemas and FK relationships are inspected and staged.
+
+- Procedures table (`public.procedimientos`) now contains JSONB fields (recursos, kpis, responsabilidades) and a departamento_id FK — verify RLS policies and indexes before enabling RLS in staging.
+
+- `public.lineas_trabajo` — quick snapshot: contains `actividad_id` FK -> `public.actividades.id`, `tipo` and `orden` fields, and `configuracion` jsonb. Index `idx_lineas_trabajo_actividad` exists. Row count observed: 3.
+
 7) Local storage and token handling
 	 - Keys in use: `auth_token`, `current_employee`, `ai_chat_messages` (legacy per-employee keys)
 	 - Why temporary: storing JWTs in `sessionStorage` is vulnerable to XSS. For production, prefer HttpOnly cookies + CSRF protection and refresh token rotation.
