@@ -138,6 +138,10 @@ Get-NetTCPConnection -LocalPort 3000 | ForEach-Object { Stop-Process -Id $_.Owni
 - Change dev `currentEmployeeId` quickly: use the input control in the HeaderBar; it updates `UserContext` and `EmployeeInfoPanel` immediately.
 - Chat history persistence: stored in `sessionStorage` key `ai_chat_messages`.
 
+Local DB and empleados template
+--------------------------------
+We provide a local Postgres setup and seeds under `devops/` for RLS and JWT testing. See `devops/LOCAL_DB_README.md` for quick start, and use `devops/empleados_template.csv` to populate realistic employee records for local testing. Do not apply these seeds to production.
+
 ## Test User IDs (Development)
 
 - `EMP-001`: Primary dev user — synthetic trend data is injected for this employee to make charts show meaningful trends during development.

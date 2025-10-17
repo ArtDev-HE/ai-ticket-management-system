@@ -128,6 +128,10 @@ Before marking a release candidate as ready for production, complete the followi
 5. Run the devops seed/smoke scripts only against a disposable test DB and verify they refuse to run without explicit env guards.
 6. Merge a final PR that documents the remediation and changes in `docs/DEV_PREPROD_CHECKLIST.md`.
 
+Additional resources:
+
+- Local DB and `empleados` template: We provide `devops/LOCAL_DB_README.md` and `devops/empleados_template.csv` for local and staging testing. Use these artifacts only against disposable test databases. Never run seeds against production without explicit approval and a full backup.
+
 ## Database schema snapshot (selected tables)
 
 During the recent inspection we recorded quick schema snapshots for two tables to guide remediation and RLS planning. These are developer notes only; run `information_schema` queries against the target DB for authoritative metadata.

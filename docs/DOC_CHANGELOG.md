@@ -30,6 +30,9 @@ This changelog tracks documentation updates, reviewer initials, and brief notes.
   - Added `procedimientos` snapshot to docs. Observed `codigo` unique constraint, `departamento_id` FK and JSONB fields (`recursos`, `kpis`, `responsabilidades`, `validaciones`). Row count observed: 4.
   - Added `lineas_trabajo` snapshot to docs. Observed FK `actividad_id` -> `actividades.id`, `tipo`/`orden` fields and an index `idx_lineas_trabajo_actividad`. Row count observed: 3.
 
+## 2025-10-17
+- Added local DB artifacts and an `empleados` CSV template for local/staging testing: `devops/LOCAL_DB_README.md`, `devops/empleados_template.csv`, `devops/schema.sql` (extended), and seeds `devops/seed_realistic.sql`.
+
 
 ## Previous
 - 2025-10-08: Initial draft and session updates (various files)

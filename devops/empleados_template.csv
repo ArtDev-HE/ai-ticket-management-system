@@ -1,0 +1,14 @@
+id,nombre,apellido,email,telefono,departamento_id,rol,fecha_ingreso,activo,metadata,manager_id,location,contract_type
+EMP-001,Eduar,Montesino,directorproyectos@he-ing.com,3215827844,DES,director,2021-03-01,true,"{""position"": ""Gerente""}",EMP-005,Bogota,permanent
+EMP-002,Andrea,Diaz,andreadiaz@he-ing.com,3008724295,DES,director,2021-07-15,true,"{""position"": ""Subgerente""}",EMP-005,Bogota,permanent
+EMP-003,Carlos,Venegas,carlosvenegas@he-ing.com,3226705414,DCM,director,2020-01-10,true,"{""position"": ""Director de Proyectos""}",,Medellin,permanent
+EMP-004,Deixi,Yepez,gestionhseq@he-ing.com,3116951375,SGI,director,2019-11-05,true,"{""position"": ""Director SGI""}",,Bogota,permanent
+EMP-005,Arturo,Insignares,arturoinsignares@he-ing.com,3118701960,DES,sysadmin,2018-06-20,true,"{""position"": ""Director Administrativo""}",,Bogota,permanent
+EMP-006,Salome,Naranjo,auxiliarcontable@he-ing.com,3002853842,DFI,employee,2022-02-01,true,"{""position"": ""Auxiliar Contable""}",EMP-005,Bogota,contract
+EMP-007,Juan,Montoya,juanmontoya@he-ing.com,3104961703,DCS,employee,2022-05-12,true,"{""position"": ""Coordinador de Consultoria""}",EMP-003,Medellin,permanent
+EMP-008,Carolina,Ahumada,carolinaahumada@he-ing.com,3132385069,DCS,employee,2023-08-01,true,"{""position"": ""Ingeniero de Innovacion y Diseno""}",EMP-003,Medellin,permanent
+EMP-009,Jean,Julio,jeancarlosjulio@he-ing.com,3012651606,DCM,employee,2020-09-10,true,"{""position"": ""Ingeniero de Proyectos""}",EMP-003,Medellin,permanent
+EMP-010,Sebastian,Acevedo,sebastianacevedo@he-ing.com,3192640220,DCS,employee,2021-04-18,true,"{""position"": ""Delineante Lider""}",EMP-003,Medellin,permanent
+EMP-011,Danilo,Arango,daniloarango@he-ing.com,3207765070,DCM,employee,2021-06-22,true,"{""position"": ""Delineante""}",EMP-003,Medellin,permanent
+EMP-012,Jose,Barraza,josebarraza@he-ing.com,5493535625233,DES,director,2019-08-15,true,"{""position"": ""Director de Proyectos Internacionales""}",,Bogota,permanent
+EMP-TEST-1,Test,User,test@example.com,5495555555555,DEPT-MARKETING,employee,2025-01-01,true,"{""position"": ""Tester""}",EMP-001,Bogota,temporary

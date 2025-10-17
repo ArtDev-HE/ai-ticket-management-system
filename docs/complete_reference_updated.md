@@ -58,6 +58,10 @@ Small notes
       - charts/
         - TrendlineChart.tsx
         - EstadoBarChart.tsx
+
+  ## Local DB and `empleados` template
+
+  For safe RLS and integration testing we provide a local Postgres setup under `devops/` (see `devops/LOCAL_DB_README.md`). A CSV template for the `empleados` table is available at `devops/empleados_template.csv`. Fill this template to generate seed scripts for local development. Do not run dev seeds against production.
         - KPIReport.tsx
     - config/
       - VisualizationRegistry.ts

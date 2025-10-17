@@ -9,58 +9,99 @@
 const { Client } = require('pg');
 
 async function run() {
-  const conn = process.env.DATABASE_URL;
-  if (!conn) {
-    console.error('Set DATABASE_URL env var first (postgres://user:pass@host:port/db)');
-    process.exit(1);
-  }
-  const client = new Client({ connectionString: conn });
-  await client.connect();
-
-  // helper to run a query and show results
-  async function q(sql, params) {
-    try {
-      const res = await client.query(sql, params);
-      console.log('SQL:', sql);
-      console.log('Rows:', res.rows);
-      return res;
-    } catch (e) {
-      console.error('SQL error:', e.message);
-      return { error: e };
+    const conn = process.env.DATABASE_URL;
+    if (!conn) {
+        console.error('Set DATABASE_URL env var first (postgres://user:pass@host:port/db)');
+        process.exit(1);
     }
-  }
+    const client = new Client({ connectionString: conn });
+    await client.connect();
 
-  // Clean up any previous test rows
-  await q("DELETE FROM public.tickets WHERE id LIKE 'T-RLS-PG-%'");
+    // helper to run a query and show results
+    async function q(sql, params) {
+        try {
+            const res = await client.query(sql, params);
+            console.log('SQL:', sql);
+            console.log('Rows:', res.rows);
+            return res;
+        } catch (e) {
+            console.error('SQL error:', e.message);
+            return { error: e };
+        }
+    }
 
-  // Admin test: set claims to admin and attempt insert
-  console.log('\n--- ADMIN tests ---');
-  await q("SELECT set_config('jwt.claims.role','admin', true)");
-  await q("INSERT INTO public.tickets (id, codigo_actividad, codigo_linea_trabajo, codigo_procedimiento, titulo, descripcion, asignado_por, tiempo_estimado) VALUES ('T-RLS-PG-ADMIN-1','ACT-1','LT-1','PROC-1','admin insert','', 'EMP-ADMIN', 10) RETURNING *");
+    // Check whether current role bypasses RLS; abort if so to avoid false positives
+    try {
+        const bypassRes = await client.query("SELECT rolbypassrls FROM pg_roles WHERE rolname = current_user");
+        if (bypassRes.rows.length === 1 && bypassRes.rows[0].rolbypassrls) {
+            console.error('Current DB role bypasses RLS (rolbypassrls = true). Tests would be invalid. Create a non-bypass role and re-run the script.');
+            await client.end();
+            process.exit(2);
+        }
+    } catch (e) {
+        console.warn('Could not detect rolbypassrls; proceeding but be aware of possible bypass. Error:', e.message);
+    }
 
-  // Director test: set claims to director/department and attempt insert
-  console.log('\n--- DIRECTOR tests ---');
-  await q("SELECT set_config('jwt.claims.role','director', true)");
-  await q("SELECT set_config('jwt.claims.department_id','DEP-1', true)");
-  console.log('Check procedimiento belongs to department DEP-1:');
-  await q("SELECT app.procedimiento_belongs_to_department('PROC-1', 'DEP-1') AS belongs");
-  await q("INSERT INTO public.tickets (id, codigo_actividad, codigo_linea_trabajo, codigo_procedimiento, titulo, descripcion, asignado_por, tiempo_estimado) VALUES ('T-RLS-PG-DIR-1','ACT-1','LT-1','PROC-1','director insert','', 'EMP-DIR', 20) RETURNING *");
+    // Clean up any previous test rows
+    await q("DELETE FROM public.tickets WHERE id LIKE 'T-RLS-PG-%'");
 
-  // Employee test: set claims to employee and attempt insert assigned to them
-  console.log('\n--- EMPLOYEE tests ---');
-  await q("SELECT set_config('jwt.claims.role','employee', true)");
-  await q("SELECT set_config('jwt.claims.employee_id','EMP-TEST-1', true)");
-  await q("INSERT INTO public.tickets (id, codigo_actividad, codigo_linea_trabajo, codigo_procedimiento, titulo, descripcion, asignado_por, tiempo_estimado) VALUES ('T-RLS-PG-EMP-1','ACT-1','LT-1','PROC-1','employee insert','', 'EMP-TEST-1', 15) RETURNING *");
+    // Admin test: run inside a transaction so GUCs are visible under transaction pooling
+    console.log('\n--- ADMIN tests ---');
+    try {
+        await client.query('BEGIN');
+        await q("SELECT set_config('jwt.claims.role','admin', true)");
+        await q("INSERT INTO public.tickets (id, codigo_actividad, codigo_linea_trabajo, codigo_procedimiento, titulo, descripcion, asignado_por, tiempo_estimado) VALUES ('T-RLS-PG-ADMIN-1','ACT-1','LT-1','PROC-1','admin insert','', 'EMP-ADMIN', 10) RETURNING *");
+        await client.query('COMMIT');
+    } catch (e) {
+        console.error('Admin test failed, rolling back:', e.message);
+        await client.query('ROLLBACK');
+    }
 
-  // Employee should NOT be able to insert assigned to someone else
-  await q("INSERT INTO public.tickets (id, codigo_actividad, codigo_linea_trabajo, codigo_procedimiento, titulo, descripcion, asignado_por, tiempo_estimado) VALUES ('T-RLS-PG-EMP-2','ACT-1','LT-1','PROC-1','employee insert denied','', 'EMP-OTHER', 15) RETURNING *");
+    // Director test: set claims to director/department and attempt insert
+    console.log('\n--- DIRECTOR tests ---');
+    try {
+        await client.query('BEGIN');
+        await q("SELECT set_config('jwt.claims.role','director', true)");
+        await q("SELECT set_config('jwt.claims.department_id','DEP-1', true)");
+        console.log('Check procedimiento belongs to department DEP-1:');
+        await q("SELECT app.procedimiento_belongs_to_department('PROC-1', 'DEP-1') AS belongs");
+        await q("INSERT INTO public.tickets (id, codigo_actividad, codigo_linea_trabajo, codigo_procedimiento, titulo, descripcion, asignado_por, tiempo_estimado) VALUES ('T-RLS-PG-DIR-1','ACT-1','LT-1','PROC-1','director insert','', 'EMP-DIR', 20) RETURNING *");
+        await client.query('COMMIT');
+    } catch (e) {
+        console.error('Director test failed, rolling back:', e.message);
+        await client.query('ROLLBACK');
+    }
 
-  // Cleanup
-  console.log('\n--- Cleanup ---');
-  await q("DELETE FROM public.tickets WHERE id LIKE 'T-RLS-PG-%'");
+    // Employee test: set claims to employee and attempt insert assigned to them
+    console.log('\n--- EMPLOYEE tests ---');
+    try {
+        await client.query('BEGIN');
+        await q("SELECT set_config('jwt.claims.role','employee', true)");
+        await q("SELECT set_config('jwt.claims.employee_id','EMP-TEST-1', true)");
+        await q("INSERT INTO public.tickets (id, codigo_actividad, codigo_linea_trabajo, codigo_procedimiento, titulo, descripcion, asignado_por, tiempo_estimado) VALUES ('T-RLS-PG-EMP-1','ACT-1','LT-1','PROC-1','employee insert','', 'EMP-TEST-1', 15) RETURNING *");
 
-  await client.end();
-  console.log('PG tests complete');
+        // Employee should NOT be able to insert assigned to someone else; we expect this to fail under RLS
+        try {
+            const resEmpOther = await q("INSERT INTO public.tickets (id, codigo_actividad, codigo_linea_trabajo, codigo_procedimiento, titulo, descripcion, asignado_por, tiempo_estimado) VALUES ('T-RLS-PG-EMP-2','ACT-1','LT-1','PROC-1','employee insert denied','', 'EMP-OTHER', 15) RETURNING *");
+            if (resEmpOther && resEmpOther.error) {
+                console.error('Expected failure for EMP-OTHER insert:', resEmpOther.error.message);
+            }
+        } catch (e2) {
+            console.error('Expected failure for EMP-OTHER insert (threw):', e2 && e2.message ? e2.message : e2);
+        }
+
+        await client.query('COMMIT');
+    } catch (e) {
+        console.error('Employee test failed, rolling back:', e.message);
+        await client.query('ROLLBACK');
+    }
+
+    // Cleanup
+    console.log('\n--- Cleanup ---');
+    await q("DELETE FROM public.tickets WHERE id LIKE 'T-RLS-PG-%'");
+
+    await client.end();
+    console.log('PG tests complete');
 }
 
 run().catch(err => { console.error(err); process.exit(1); });
